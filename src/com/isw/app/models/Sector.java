@@ -9,11 +9,9 @@ public class Sector {
   private String uuid;
   private Coord coord;
   private SectorType type;
-  private boolean isOccupied;
 
   public Sector(Coord coord, SectorType type) {
     this.uuid = IdentifierHelper.generate(PREFIX);
-    this.isOccupied = false;
     this.coord = coord;
     this.type = type;
   }
@@ -28,13 +26,5 @@ public class Sector {
 
   public SectorType getType() {
     return type;
-  }
-
-  public void flagOccupied() {
-    this.isOccupied = !this.isOccupied;
-  }
-
-  public boolean checkOccupied() {
-    return isOccupied;
   }
 }
