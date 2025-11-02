@@ -2,9 +2,13 @@ package com.isw.app;
 
 import javax.swing.JFrame;
 import javax.swing.JButton;
+import java.util.logging.Logger;
 import java.awt.event.ActionEvent;
 
 public class Main {
+  private static String name = Main.class.getName();
+  private static Logger logger = Logger.getLogger(name);
+
   public static void main(String[] args) {
     JFrame frame = new JFrame("Swing Testing!");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -25,6 +29,6 @@ public class Main {
   }
 
   private static void onClick(ActionEvent e) {
-    System.out.println("Button clicked!");
+    logger.info("Button was clicked.");
   }
 }
