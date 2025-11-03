@@ -2,6 +2,7 @@ package com.isw.app.enums;
 
 public enum DataFiles {
   ROOMS("rooms.txt"),
+  REPORTS("reports.txt"),
   HISTORY("history.txt");
 
   private final String path;
