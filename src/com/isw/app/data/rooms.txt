@@ -1,21 +1,21 @@
-==================
-$ROO-1192
+$
+ROO-1192
 L S L L T L
 S S O L L L
 L O L R L S
 L L S S L O
 L L L L L L
-==================
-==================
-$ROO-2382
+$
+$
+ROO-2382
 S L L T S S O L
 L O L L L S L L
 L S R L T S L O
 O L S L L S L L
-==================
-==================
-$ROO-3456
+$
+$
+ROO-3456
 L L L L L L L L
 L S O T R L L L
 L L L S L L O L
-==================
+$
