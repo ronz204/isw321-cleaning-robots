@@ -1,8 +1,11 @@
 package com.isw.app.views;
 
+import java.awt.Color;
+import java.awt.Dimension;
 import javax.swing.JFrame;
-import javax.swing.JButton;
-import java.awt.event.ActionEvent;
+import javax.swing.JPanel;
+import java.awt.BorderLayout;
+import com.isw.app.components.BoardRoom;
 
 public class SimulatorView extends BaseView {
   public SimulatorView() {
@@ -10,43 +13,51 @@ public class SimulatorView extends BaseView {
   }
 
   private JFrame frame;
-  private JButton stopButton;
-  private JButton startButton;
+  private JPanel leftPanel;
+  private JPanel centerPanel;
+  private JPanel rightPanel;
+  private BoardRoom boardRoom;
 
   public void display() {
     buildFrame();
-    buildStopButton();
-    buildStartButton();
+    buildLeftPanel();
+    buildCenterPanel();
+    buildRightPanel();
+    buildBoardRoom();
     frame.setVisible(true);
   }
 
   private void buildFrame() {
     frame = new JFrame("Simulator");
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.setSize(800, 600);
+    frame.setSize(1000, 600);
     frame.setLocationRelativeTo(null);
-    frame.setLayout(null);
+    frame.setLayout(new BorderLayout());
   }
 
-  private void buildStartButton() {
-    startButton = new JButton("Start");
-    startButton.setBounds(50, 50, 100, 30);
-    startButton.addActionListener(this::onStart);
-    frame.add(startButton);
+  private void buildLeftPanel() {
+    leftPanel = new JPanel();
+    leftPanel.setBackground(Color.LIGHT_GRAY);
+    leftPanel.setPreferredSize(new Dimension(200, 0));
+    frame.add(leftPanel, BorderLayout.WEST);
   }
 
-  private void buildStopButton() {
-    stopButton = new JButton("Stop");
-    stopButton.setBounds(200, 50, 100, 30);
-    stopButton.addActionListener(this::onStop);
-    frame.add(stopButton);
+  private void buildCenterPanel() {
+    centerPanel = new JPanel();
+    centerPanel.setBackground(Color.WHITE);
+    centerPanel.setLayout(new BorderLayout());
+    frame.add(centerPanel, BorderLayout.CENTER);
   }
 
-  private void onStart(ActionEvent e) {
-    logger.info("Simulation started.");
+  private void buildRightPanel() {
+    rightPanel = new JPanel();
+    rightPanel.setBackground(Color.CYAN);
+    rightPanel.setPreferredSize(new Dimension(250, 0));
+    frame.add(rightPanel, BorderLayout.EAST);
   }
 
-  private void onStop(ActionEvent e) {
-    logger.info("Simulation stopped.");
+  private void buildBoardRoom() {
+    boardRoom = new BoardRoom();
+    centerPanel.add(boardRoom, BorderLayout.CENTER);
   }
 }
