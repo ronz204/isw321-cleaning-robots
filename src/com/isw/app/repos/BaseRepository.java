@@ -1,0 +1,26 @@
+package com.isw.app.repos;
+
+import java.io.FileWriter;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.BufferedWriter;
+import java.io.BufferedReader;
+import com.isw.app.enums.DataFile;
+
+public class BaseRepository {
+  protected DataFile file;
+
+  public BaseRepository(DataFile file) {
+    this.file = file;
+  }
+
+  protected BufferedReader getReader() throws IOException {
+    FileReader reader = new FileReader(this.file.getPath());
+    return new BufferedReader(reader);
+  }
+
+  protected BufferedWriter getWriter() throws IOException {
+    FileWriter writer = new FileWriter(this.file.getPath());
+    return new BufferedWriter(writer);
+  }
+}

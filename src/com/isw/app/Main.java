@@ -1,9 +1,12 @@
 package com.isw.app;
 
-import com.isw.app.views.SimulatorView;
+import com.isw.app.repos.RoomRepository;
+/* import com.isw.app.views.SimulatorView; */
 
 public class Main {
   public static void main(String[] args) {
-    new SimulatorView().display();
+    /* new SimulatorView().display(); */
+    new RoomRepository().getAllRooms();
+
   }
 }
