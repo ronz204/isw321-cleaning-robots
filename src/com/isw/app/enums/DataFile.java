@@ -1,6 +1,6 @@
 package com.isw.app.enums;
 
-public enum DataFiles {
+public enum DataFile {
   ROOMS("rooms.txt"),
   REPORTS("reports.txt"),
   HISTORY("history.txt");
@@ -8,7 +8,7 @@ public enum DataFiles {
   private final String path;
   private final String base = "src/com/isw/app/data/";
 
-  DataFiles(String path) {
+  DataFile(String path) {
     this.path = base + path;
   }
 
