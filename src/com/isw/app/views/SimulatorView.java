@@ -6,6 +6,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import com.isw.app.components.BoardRoom;
+import com.isw.app.components.ControlPanel;
 
 public class SimulatorView extends BaseView {
   public SimulatorView() {
@@ -17,6 +18,7 @@ public class SimulatorView extends BaseView {
   private JPanel centerPanel;
   private JPanel rightPanel;
   private BoardRoom boardRoom;
+  private ControlPanel controlPanel;
 
   public void display() {
     buildFrame();
@@ -24,6 +26,7 @@ public class SimulatorView extends BaseView {
     buildCenterPanel();
     buildRightPanel();
     buildBoardRoom();
+    buildControlPanel();
     frame.setVisible(true);
   }
 
@@ -51,7 +54,7 @@ public class SimulatorView extends BaseView {
 
   private void buildRightPanel() {
     rightPanel = new JPanel();
-    rightPanel.setBackground(Color.CYAN);
+    rightPanel.setBackground(Color.LIGHT_GRAY);
     rightPanel.setPreferredSize(new Dimension(250, 0));
     frame.add(rightPanel, BorderLayout.EAST);
   }
@@ -59,5 +62,10 @@ public class SimulatorView extends BaseView {
   private void buildBoardRoom() {
     boardRoom = new BoardRoom();
     centerPanel.add(boardRoom, BorderLayout.CENTER);
+  }
+
+  private void buildControlPanel() {
+    controlPanel = new ControlPanel();
+    leftPanel.add(controlPanel, BorderLayout.CENTER);
   }
 }
