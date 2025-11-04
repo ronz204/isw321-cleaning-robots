@@ -17,8 +17,8 @@ public class Room {
   private Map<SectorType, Integer> counter = new HashMap<>();
 
   public Room() {
-    setupSectorBoard();
     setupSectorCounter();
+    setupSectorBoard();
     this.uuid = IdentifierHelper.generate(PREFIX);
   }
 
