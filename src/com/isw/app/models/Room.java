@@ -36,4 +36,12 @@ public class Room {
   public String getUuid() {
     return uuid;
   }
+
+  public Sector[][] getSectors() {
+    return sectors;
+  }
+
+  public Sector getSectorAt(Coord coord) {
+    return sectors[coord.getRow()][coord.getCol()];
+  }
 }
