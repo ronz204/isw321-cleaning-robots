@@ -17,16 +17,9 @@ public class Room {
   private Map<SectorType, Integer> counter = new HashMap<>();
 
   public Room() {
+    setupSectorBoard();
     setupSectorCounter();
     this.uuid = IdentifierHelper.generate(PREFIX);
-
-    for (int row = 0; row < ROWS; row++) {
-      for (int col = 0; col < COLS; col++) {
-        Coord coord = new Coord(row, col);
-        SectorType type = SectorType.getRandomType();
-        sectors[row][col] = new Sector(coord, type);
-      }
-    }
   }
 
   public int getRows() {
@@ -57,9 +50,19 @@ public class Room {
     return new HashMap<>(counter);
   }
 
-  public void setupSectorCounter() {
+  private void setupSectorCounter() {
     for (SectorType type : SectorType.values()) {
       counter.put(type, 0);
+    }
+  }
+
+  private void setupSectorBoard() {
+    for (int row = 0; row < ROWS; row++) {
+      for (int col = 0; col < COLS; col++) {
+        SectorType type = SectorType.getRandomType();
+        sectors[row][col] = new Sector(new Coord(row, col), type);
+        counter.put(type, counter.get(type) + 1);
+      }
     }
   }
 }
