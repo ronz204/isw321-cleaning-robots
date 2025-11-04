@@ -1,12 +1,14 @@
-package com.isw.app.views;
+package com.isw.app.presentation.views;
 
 import java.awt.Color;
 import java.awt.Dimension;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+
+import com.isw.app.presentation.components.BoardRoom;
+import com.isw.app.presentation.components.ControlPanel;
+
 import java.awt.BorderLayout;
-import com.isw.app.components.BoardRoom;
-import com.isw.app.components.ControlPanel;
 
 public class SimulatorView extends BaseView {
   public SimulatorView() {
