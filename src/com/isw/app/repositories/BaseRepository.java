@@ -1,4 +1,4 @@
-package com.isw.app.repos;
+package com.isw.app.repositories;
 
 import java.io.FileWriter;
 import java.io.FileReader;
