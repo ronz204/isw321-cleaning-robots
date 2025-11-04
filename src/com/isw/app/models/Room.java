@@ -1,5 +1,7 @@
 package com.isw.app.models;
 
+import java.util.Map;
+import java.util.HashMap;
 import com.isw.app.enums.SectorType;
 import com.isw.app.helpers.RandomHelper;
 import com.isw.app.helpers.IdentifierHelper;
@@ -10,10 +12,12 @@ public class Room {
   private int ROWS = RandomHelper.getRandomInt(1, 10);
   private int COLS = RandomHelper.getRandomInt(1, 10);
 
-  private Sector[][] sectors = new Sector[ROWS][COLS];
   private String uuid;
+  private Sector[][] sectors = new Sector[ROWS][COLS];
+  private Map<SectorType, Integer> counter = new HashMap<>();
 
   public Room() {
+    setupSectorCounter();
     this.uuid = IdentifierHelper.generate(PREFIX);
 
     for (int row = 0; row < ROWS; row++) {
@@ -41,7 +45,21 @@ public class Room {
     return sectors;
   }
 
+  public int getTotalSectors() {
+    return ROWS * COLS;
+  }
+
   public Sector getSectorAt(Coord coord) {
     return sectors[coord.getRow()][coord.getCol()];
+  }
+
+  public Map<SectorType, Integer> getSectorCounter() {
+    return new HashMap<>(counter);
+  }
+
+  public void setupSectorCounter() {
+    for (SectorType type : SectorType.values()) {
+      counter.put(type, 0);
+    }
   }
 }
