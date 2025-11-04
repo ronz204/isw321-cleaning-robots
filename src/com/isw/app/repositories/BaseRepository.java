@@ -23,4 +23,9 @@ public class BaseRepository {
     FileWriter writer = new FileWriter(this.file.getPath());
     return new BufferedWriter(writer);
   }
+
+  protected BufferedWriter getAppendWriter() throws IOException {
+    FileWriter writer = new FileWriter(this.file.getPath(), true);
+    return new BufferedWriter(writer);
+  }
 }
