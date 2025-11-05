@@ -2,6 +2,8 @@ package com.isw.app.presentation.components;
 
 import java.awt.Color;
 import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
+
 import java.awt.GridLayout;
 import com.isw.app.models.Room;
 import com.isw.app.models.Sector;
@@ -14,6 +16,7 @@ public class BoardRoom extends JPanel {
 
   private void buildContainer() {
     this.setBackground(Color.DARK_GRAY);
+    this.setBorder(new EmptyBorder(20, 20, 20, 20));
   }
 
   public void onUpdateRoom(Room room) {
@@ -21,7 +24,7 @@ public class BoardRoom extends JPanel {
     int rows = room.getRows();
     int cols = room.getCols();
 
-    this.setLayout(new GridLayout(rows, cols, 1, 1));
+    this.setLayout(new GridLayout(rows, cols, 3, 3));
     buildSectorBlocks(room);
 
     this.revalidate();
