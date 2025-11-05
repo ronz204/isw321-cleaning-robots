@@ -1,18 +1,19 @@
 package com.isw.app.enums;
 
+import java.nio.file.Paths;
+
 public enum DataFile {
   ROOMS("rooms.txt"),
   REPORTS("reports.txt"),
   HISTORY("history.txt");
 
-  private final String path;
-  private final String base = "src/com/isw/app/data/";
+  private final String filename;
 
-  DataFile(String path) {
-    this.path = base + path;
+  DataFile(String filename) {
+    this.filename = filename;
   }
 
   public String getPath() {
-    return path;
+    return Paths.get("src", "com", "isw", "app", "data", filename).toString();
   }
 }
