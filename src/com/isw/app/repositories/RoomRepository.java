@@ -25,31 +25,34 @@ public class RoomRepository extends BaseRepository {
 
   public void saveRoom(Room room) {
     try (BufferedWriter writer = this.getAppendWriter()) {
-      writer.write("$");
-      writer.newLine();
-      
-      writer.write(room.getUuid());
-      writer.newLine();
-      
-      Sector[][] sectors = room.getSectors();
-      for (int row = 0; row < room.getRows(); row++) {
-        StringBuilder builder = new StringBuilder();
-
-        for (int col = 0; col < room.getCols(); col++) {
-          builder.append(sectors[row][col].getType().getPrefix());
-          if (col < room.getCols() - 1) {
-            builder.append(" ");
-          }
-        }
-
-        writer.write(builder.toString());
-        writer.newLine();
-      }
-      
-      writer.write("$");
-      writer.newLine();
+      writeDelimiter(writer);
+      writeField(writer, room.getUuid());
+      writeSectorsData(writer, room);
+      writeDelimiter(writer);
     } catch (IOException e) {
       e.printStackTrace();
     }
+  }
+
+  private void writeSectorsData(BufferedWriter writer, Room room) throws IOException {
+    Sector[][] sectors = room.getSectors();
+
+    for (int row = 0; row < room.getRows(); row++) {
+      String sectorRow = buildSectorRow(sectors[row], room.getCols());
+      writeField(writer, sectorRow);
+    }
+  }
+
+  private String buildSectorRow(Sector[] sectorRow, int cols) {
+    StringBuilder builder = new StringBuilder();
+
+    for (int col = 0; col < cols; col++) {
+      builder.append(sectorRow[col].getType().getPrefix());
+      if (col < cols - 1) {
+        builder.append(" ");
+      }
+    }
+
+    return builder.toString();
   }
 }
