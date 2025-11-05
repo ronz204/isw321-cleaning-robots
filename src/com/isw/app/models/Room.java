@@ -9,8 +9,8 @@ import com.isw.app.helpers.IdentifierHelper;
 public class Room {
   private final String PREFIX = "ROO";
 
-  private int ROWS = RandomHelper.getRandomInt(1, 10);
-  private int COLS = RandomHelper.getRandomInt(1, 10);
+  private int ROWS = RandomHelper.getRandomInt(3, 10);
+  private int COLS = RandomHelper.getRandomInt(3, 10);
 
   private String uuid;
   private Sector[][] sectors = new Sector[ROWS][COLS];
