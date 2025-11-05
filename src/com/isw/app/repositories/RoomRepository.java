@@ -1,7 +1,6 @@
 package com.isw.app.repositories;
 
 import java.io.IOException;
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import com.isw.app.models.Room;
 import com.isw.app.models.Sector;
@@ -12,18 +11,7 @@ public class RoomRepository extends BaseRepository {
     super(DataFile.ROOMS);
   }
 
-  public void getAllRooms() {
-    try (BufferedReader reader = this.getReader()) {
-      String line;
-      while ((line = reader.readLine()) != null) {
-        System.out.println(line);
-      }
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-  public void saveRoom(Room room) {
+  public void save(Room room) {
     try (BufferedWriter writer = this.getAppendWriter()) {
       writeDelimiter(writer);
       writeField(writer, room.getUuid());
