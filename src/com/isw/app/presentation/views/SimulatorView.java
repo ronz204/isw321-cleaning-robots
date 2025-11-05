@@ -4,11 +4,11 @@ import java.awt.Color;
 import java.awt.Dimension;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-
+import java.awt.BorderLayout;
+import com.isw.app.models.Room;
+import com.isw.app.services.RoomService;
 import com.isw.app.presentation.components.BoardRoom;
 import com.isw.app.presentation.components.ControlPanel;
-
-import java.awt.BorderLayout;
 
 public class SimulatorView extends BaseView {
   public SimulatorView() {
@@ -68,6 +68,12 @@ public class SimulatorView extends BaseView {
 
   private void buildControlPanel() {
     controlPanel = new ControlPanel();
+    controlPanel.setOnGenerate(this::onGenerateBoard);
     leftPanel.add(controlPanel, BorderLayout.CENTER);
+  }
+
+  private void onGenerateBoard() {
+    Room room = RoomService.generate();
+    boardRoom.onUpdateRoom(room);
   }
 }
