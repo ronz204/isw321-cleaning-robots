@@ -22,7 +22,8 @@ public class ControlPanel extends JPanel {
     buildContainer();
     buildButtonPanel();
     buildTitleLabel();
-    buildStartButton();
+    buildGenerateButton();
+    buildSimulateButton();
     buildExitButton();
   }
   
@@ -33,7 +34,7 @@ public class ControlPanel extends JPanel {
   private void buildButtonPanel() {
     buttonPanel = new JPanel();
     buttonPanel.setBackground(Color.LIGHT_GRAY);
-    buttonPanel.setLayout(new GridLayout(3, 1, 0, 10));
+    buttonPanel.setLayout(new GridLayout(4, 1, 0, 10));
     this.add(buttonPanel, BorderLayout.CENTER);
   }
   
@@ -44,9 +45,16 @@ public class ControlPanel extends JPanel {
     titleLabel.setForeground(Color.DARK_GRAY);
     buttonPanel.add(titleLabel);
   }
+
+  private void buildGenerateButton() {
+    startButton = new JButton("Generar");
+    startButton.setFocusPainted(false);
+    startButton.setPreferredSize(new Dimension(120, 30));
+    buttonPanel.add(startButton);
+  }
   
-  private void buildStartButton() {
-    startButton = new JButton("Comenzar");
+  private void buildSimulateButton() {
+    startButton = new JButton("Simular");
     startButton.setFocusPainted(false);
     startButton.setPreferredSize(new Dimension(120, 30));
     buttonPanel.add(startButton);
