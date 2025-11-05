@@ -1,0 +1,83 @@
+PROYECTO: ROBOT DE LIMPIEZA AUTÓNOMO
+========================================
+
+REQUISITOS TÉCNICOS:
+- Lenguaje: Java
+- Uso obligatorio de: funciones, estructuras de datos, objetos, archivos .txt, programación por capas, interfaz gráfica
+- Prohibido: archivos que no sean .txt, estructuras de datos no vistas en clase
+
+DESCRIPCIÓN DEL SISTEMA:
+Simular robots de limpieza autónomos en un salón (matriz) que identifican y limpian espacios sucios, evitan obstáculos, optimizan rutas y gestionan energía.
+
+CREACIÓN DEL SALÓN:
+- Archivo: salon.txt contiene matrices de diferentes dimensiones
+- El sistema debe permitir crear nuevos salones y almacenarlos
+
+Estados del salón:
+- L: Espacio limpio
+- S: Espacio sucio
+- O: Obstáculo permanente
+- T: Obstáculo temporal (desaparece con el tiempo en segundos)
+- R: Punto de recarga de batería (entre 1 y 4 puntos, asignados aleatoriamente)
+
+- Todos los estados se asignan por porcentajes de manera aleatoria
+- Debe usar imágenes, íconos o colores para identificar robots y estados
+
+COMPORTAMIENTO DEL ROBOT:
+
+1. CANTIDAD DE ROBOTS:
+   - El sistema calcula automáticamente cuántos robots necesita según: tamaño del salón, cantidad de obstáculos y porcentaje de suciedad
+   - Esta lógica debe ser justificada en el informe
+
+2. POSICIONAMIENTO:
+   - Los robots inician en posición vacía (sin estado definido)
+   - No pueden estar en la misma celda ni colisionar entre ellos
+
+3. MOVIMIENTO:
+   - Se mueve a celdas adyacentes (arriba, abajo, izquierda, derecha)
+   - No puede atravesar obstáculos (O)
+   - Prioriza moverse a celda sucia con menor cantidad de obstáculos
+   - Evita limpiar si hay otro robot cerca
+   - Prioridad: robots más cercanos al espacio sucio o con más batería
+
+4. GESTIÓN DE BATERÍA:
+   - Batería inicial: 10 movimientos
+   - Batería máxima: 20 movimientos
+   - Cada movimiento consume 1 de carga
+   - Puntos de recarga (R) tienen recarga ilimitada, dan +10 de batería (acumulativo)
+   - Si batería se agota fuera de R, el robot queda inactivo
+   - Debe planificar ruta considerando energía para regresar a recarga
+   - Después de recargar, debe decidir si volver al punto anterior o buscar nueva dirección (opción más eficiente)
+   - Robot abandona R después de recargar
+
+5. OBSTÁCULOS TEMPORALES:
+   - Debe validar posibilidad de esperar si T se desbloquea para continuar
+
+6. LIMPIEZA:
+   - Al posicionarse en S, automáticamente se limpia
+   - Objetivo: limpiar al menos 80% del salón
+   - Si todos los robots quedan inactivos antes del 80%, misión fallida
+
+7. AUTONOMÍA:
+   - Los robots se mueven solos, sin controles en la interfaz
+
+8. REGISTRO:
+   - Archivo: registro.txt
+   - Debe registrar paso a paso los movimientos de cada robot con información clara y coherente
+
+RESULTADOS EN INTERFAZ:
+Al finalizar mostrar:
+- Cantidad total de espacios sucios en el salón
+- Cantidad de espacios limpiados por robot(s)
+- Porcentaje de limpieza alcanzado
+- Estado final de la misión:
+  - Completada (≥ 80%)
+  - Aceptable (≥ 50% y < 80%) con al menos un robot activo
+  - Fallida (< 50% o robot inactivo sin cumplir objetivo)
+
+DOCUMENTACIÓN REQUERIDA (Word o PDF):
+1. Lógica del algoritmo: explicar cómo funcionan los algoritmos para todas las actividades del comportamiento del robot, con imágenes del código y datos relevantes
+
+2. Tabla de completitud:
+   - Sección | ¿Completamente terminada y funcional? (Sí/No) | Si no, breve descripción del por qué
+   - Secciones: Creación del salón, Comportamiento del robot, Resultados esperados
