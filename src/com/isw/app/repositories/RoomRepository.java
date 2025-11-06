@@ -11,14 +11,12 @@ import com.isw.app.helpers.TxtQueryHelper;
 public class RoomRepository {
   private final DataFile file = DataFile.ROOMS;
 
-  public void save(Room room) {
+  public void save(Room room) throws IOException {
     try (BufferedWriter writer = BufferedHelper.getWriter(file)) {
       TxtQueryHelper.writeDelimiter(writer);
       TxtQueryHelper.writeField(writer, room.getUuid());
       writeSectorsData(writer, room);
       TxtQueryHelper.writeDelimiter(writer);
-    } catch (IOException e) {
-      e.printStackTrace();
     }
   }
 
