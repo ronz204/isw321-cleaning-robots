@@ -4,6 +4,7 @@ import java.nio.file.Paths;
 
 public enum DataFile {
   ROOMS("rooms.txt"),
+  ROBOTS("robots.txt"),
   REPORTS("reports.txt"),
   HISTORY("history.txt");
 
