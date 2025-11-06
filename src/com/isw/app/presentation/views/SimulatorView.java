@@ -11,6 +11,8 @@ import com.isw.app.presentation.components.BoardRoom;
 import com.isw.app.presentation.components.ControlPanel;
 
 public class SimulatorView extends BaseView {
+  private final RoomService roomService = new RoomService();
+
   public SimulatorView() {
     super(SimulatorView.class.getName());
   }
@@ -73,7 +75,7 @@ public class SimulatorView extends BaseView {
   }
 
   private void onGenerateBoard() {
-    Room room = RoomService.generate();
+    Room room = roomService.generate();
     boardRoom.onUpdateRoom(room);
   }
 }
