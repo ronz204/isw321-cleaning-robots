@@ -5,18 +5,18 @@ import java.io.BufferedWriter;
 import com.isw.app.models.Room;
 import com.isw.app.models.Sector;
 import com.isw.app.enums.DataFile;
+import com.isw.app.helpers.BufferedHelper;
+import com.isw.app.helpers.TxtQueryHelper;
 
-public class RoomRepository extends BaseRepository {
-  public RoomRepository() {
-    super(DataFile.ROOMS);
-  }
+public class RoomRepository {
+  private final DataFile file = DataFile.ROOMS;
 
   public void save(Room room) {
-    try (BufferedWriter writer = this.getAppendWriter()) {
-      writeDelimiter(writer);
-      writeField(writer, room.getUuid());
+    try (BufferedWriter writer = BufferedHelper.getWriter(file)) {
+      TxtQueryHelper.writeDelimiter(writer);
+      TxtQueryHelper.writeField(writer, room.getUuid());
       writeSectorsData(writer, room);
-      writeDelimiter(writer);
+      TxtQueryHelper.writeDelimiter(writer);
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -27,7 +27,7 @@ public class RoomRepository extends BaseRepository {
 
     for (int row = 0; row < room.getRows(); row++) {
       String sectorRow = buildSectorRow(sectors[row], room.getCols());
-      writeField(writer, sectorRow);
+      TxtQueryHelper.writeField(writer, sectorRow);
     }
   }
 
