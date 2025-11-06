@@ -9,11 +9,11 @@ public class Sector {
   private String uuid;
   private Coord coord;
   private SectorType type;
-  private boolean isOccupied;
+  private boolean isEmpty;
 
   public Sector(Coord coord, SectorType type) {
     this.uuid = IdentifierHelper.generate(PREFIX);
-    this.isOccupied = false;
+    this.isEmpty = true;
     this.coord = coord;
     this.type = type;
   }
@@ -34,11 +34,11 @@ public class Sector {
     this.type = type;
   }
 
-  public boolean checkIsOccupied() {
-    return isOccupied == true;
+  public boolean checkIsEmpty() {
+    return isEmpty == true;
   }
 
-  public void setIsOccupied(boolean isOccupied) {
-    this.isOccupied = isOccupied;
+  public void setIsEmpty(boolean isEmpty) {
+    this.isEmpty = isEmpty;
   }
 }
