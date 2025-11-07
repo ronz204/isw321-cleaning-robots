@@ -41,4 +41,20 @@ public class Sector {
   public void setIsEmpty(boolean isEmpty) {
     this.isEmpty = isEmpty;
   }
+
+  public boolean isEmpty() {
+    return isEmpty;
+  }
+
+  public boolean isNavigable() {
+    return type != SectorType.OBSTRUCTED;
+  }
+
+  public boolean clean() {
+    if (type == SectorType.DIRTY) {
+      type = SectorType.CLEAN;
+      return true;
+    }
+    return false;
+  }
 }
