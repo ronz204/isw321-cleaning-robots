@@ -7,20 +7,25 @@ import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import com.isw.app.models.Room;
 import com.isw.app.services.RoomService;
+import com.isw.app.services.RobotService;
 import com.isw.app.presentation.components.BoardRoom;
 import com.isw.app.presentation.components.ControlPanel;
 
 public class SimulatorView extends BaseView {
   private final RoomService roomService = new RoomService();
+  private final RobotService robotService = new RobotService();
 
   public SimulatorView() {
     super(SimulatorView.class.getName());
   }
 
+  private Room room;
+
   private JFrame frame;
   private JPanel leftPanel;
-  private JPanel centerPanel;
   private JPanel rightPanel;
+  private JPanel centerPanel;
+
   private BoardRoom boardRoom;
   private ControlPanel controlPanel;
 
@@ -71,11 +76,16 @@ public class SimulatorView extends BaseView {
   private void buildControlPanel() {
     controlPanel = new ControlPanel();
     controlPanel.setOnGenerate(this::onGenerateBoard);
+    controlPanel.setOnPlaced(this::onPlaceRobots);
     leftPanel.add(controlPanel, BorderLayout.CENTER);
   }
 
   private void onGenerateBoard() {
-    Room room = roomService.generate();
+    room = roomService.generate();
     boardRoom.onUpdateRoom(room);
+  }
+
+  public void onPlaceRobots() {
+    robotService.generate(room);
   }
 }

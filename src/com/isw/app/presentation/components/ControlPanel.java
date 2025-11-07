@@ -26,6 +26,7 @@ public class ControlPanel extends JPanel {
   private JPanel legendPanel;
 
   private Runnable onGenerateCall;
+  private Runnable onPlacedCall;
 
   public ControlPanel() {
     buildContainer();
@@ -68,6 +69,7 @@ public class ControlPanel extends JPanel {
   private void buildPlaceButton() {
     placeButton = new JButton("Colocar Robots");
     placeButton.setFocusPainted(false);
+    placeButton.addActionListener(this::onPlaceRobots);
     placeButton.setPreferredSize(new Dimension(140, 30));
     buttonPanel.add(placeButton);
   }
@@ -134,6 +136,16 @@ public class ControlPanel extends JPanel {
   private void onGenerate(ActionEvent e) {
     if (this.onGenerateCall != null) {
       this.onGenerateCall.run();
+    }
+  }
+
+  public void setOnPlaced(Runnable callback) {
+    this.onPlacedCall = callback;
+  }
+
+  private void onPlaceRobots(ActionEvent e) {
+    if (this.onPlacedCall != null) {
+      this.onPlacedCall.run();
     }
   }
 

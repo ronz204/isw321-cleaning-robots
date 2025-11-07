@@ -1,25 +1,8 @@
 $
-ROO-4097
-S L L L L L S L
-L S L R S L L L
-L R L S S S S L
-S L L L L R L L
-S T S L L L S L
-L S L L T L R L
-L S L L S L S S
-L L L R R R S L
-L L T R L S T L
-$
-$
-ROO-6040
-S S L T L S L L
-S L S L L R S L
-L L L S S S L S
-L S R L R T L T
-S S L L L L L S
-R L L S S S S S
-L R L L S L R L
-L T S T L S S L
-L R L S L S L R
-L L L S L S L L
+ROO-5341
+T L S S L L L
+L L S L L T L
+R L R S L R S
+S S S T S R L
+T T T S L L L
 $
