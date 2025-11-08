@@ -59,6 +59,7 @@ public class MovementService {
     return adjacent;
   }
 
+  // TO-DO: Review
   private boolean isValidMove(Coord coord, Room room) {
     Sector sector = room.getSectorAt(coord);
     return sector.isNavigable() && sector.isEmpty();
