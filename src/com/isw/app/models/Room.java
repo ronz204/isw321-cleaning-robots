@@ -109,20 +109,26 @@ public class Room {
     getSectorAt(coord).setIsEmpty(!occupied);
   }
 
-  public void updateSectorType(Coord coord, SectorType oldType, SectorType newType) {
-    Sector sector = getSectorAt(coord);
-    sector.setType(newType);
-    
-    decrementSectorCount(oldType);
-    incrementSectorCount(newType);
-  }
-
   public void decrementSectorCount(SectorType type) {
     int currentCount = counter.get(type);
-    if (currentCount > 0) counter.put(type, currentCount - 1);
+    if (currentCount > 0)
+      counter.put(type, currentCount - 1);
   }
 
   public void incrementSectorCount(SectorType type) {
     counter.put(type, counter.getOrDefault(type, 0) + 1);
+  }
+
+  public List<Coord> getRechargeCoords() {
+    return getAllCoords().stream()
+        .filter(coord -> getSectorAt(coord).getType() == SectorType.RECHARGE)
+        .collect(Collectors.toList());
+  }
+
+  public int getDistanceToNearestRecharge(Coord coord) {
+    return getRechargeCoords().stream()
+        .mapToInt(coord::distanceTo)
+        .min()
+        .orElse(Integer.MAX_VALUE);
   }
 }
