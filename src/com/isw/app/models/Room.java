@@ -4,10 +4,10 @@ import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 import com.isw.app.enums.SectorType;
 import com.isw.app.helpers.RandomHelper;
 import com.isw.app.helpers.IdentifierHelper;
-import java.util.stream.Collectors;
 
 public class Room {
   private final String PREFIX = "ROO";
@@ -83,6 +83,12 @@ public class Room {
     return coords;
   }
 
+  public List<Coord> getCoordsByType(SectorType type) {
+    return getAllCoords().stream()
+        .filter(coord -> getSectorAt(coord).getType() == type)
+        .collect(Collectors.toList());
+  }
+
   public List<Coord> getEmptyCoords() {
     return getAllCoords().stream()
         .filter(coord -> {
@@ -96,8 +102,7 @@ public class Room {
     for (int row = Math.max(0, center.getRow() - radius); row <= Math.min(ROWS - 1, center.getRow() + radius); row++) {
       for (int col = Math.max(0, center.getCol() - radius); col <= Math.min(COLS - 1,
           center.getCol() + radius); col++) {
-        Coord coord = new Coord(row, col);
-        if (getSectorAt(coord).getType() == SectorType.DIRTY) {
+        if (getSectorAt(new Coord(row, col)).getType() == SectorType.DIRTY) {
           return true;
         }
       }
@@ -110,9 +115,7 @@ public class Room {
   }
 
   public void decrementSectorCount(SectorType type) {
-    int currentCount = counter.get(type);
-    if (currentCount > 0)
-      counter.put(type, currentCount - 1);
+    counter.computeIfPresent(type, (k, v) -> Math.max(0, v - 1));
   }
 
   public void incrementSectorCount(SectorType type) {
@@ -120,9 +123,7 @@ public class Room {
   }
 
   public List<Coord> getRechargeCoords() {
-    return getAllCoords().stream()
-        .filter(coord -> getSectorAt(coord).getType() == SectorType.RECHARGE)
-        .collect(Collectors.toList());
+    return getCoordsByType(SectorType.RECHARGE);
   }
 
   public int getDistanceToNearestRecharge(Coord coord) {
