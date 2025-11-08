@@ -1,5 +1,6 @@
 package com.isw.app.models;
 
+import com.isw.app.enums.RobotState;
 import com.isw.app.helpers.IdentifierHelper;
 
 public class Robot {
@@ -8,11 +9,11 @@ public class Robot {
   private String uuid;
   private Coord coord;
   private int battery;
-  private boolean isActive;
+  private RobotState state;
 
   public Robot(Coord coord) {
     this.uuid = IdentifierHelper.generate(PREFIX);
-    this.isActive = true;
+    this.state = RobotState.ACTIVE;
     this.coord = coord;
     this.battery = 10;
   }
@@ -37,11 +38,11 @@ public class Robot {
     this.battery = battery;
   }
 
-  public boolean isActive() {
-    return isActive;
+  public RobotState getState() {
+    return state;
   }
 
-  public void setActive(boolean active) {
-    isActive = active;
+  public void setState(RobotState state) {
+    this.state = state;
   }
 }

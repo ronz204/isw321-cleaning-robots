@@ -18,7 +18,7 @@ public class RobotRepository {
       Coord coord = robot.getCoord();
       TxtQueryHelper.writeField(writer, coord.getRow() + " " + coord.getCol());
       TxtQueryHelper.writeField(writer, String.valueOf(robot.getBattery()));
-      TxtQueryHelper.writeField(writer, String.valueOf(robot.isActive()));
+      TxtQueryHelper.writeField(writer, robot.getState().getLabel());
       TxtQueryHelper.writeDelimiter(writer);
     }
   }
