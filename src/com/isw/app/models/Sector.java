@@ -34,10 +34,6 @@ public class Sector {
     this.type = type;
   }
 
-  public boolean checkIsEmpty() {
-    return isEmpty == true;
-  }
-
   public void setIsEmpty(boolean isEmpty) {
     this.isEmpty = isEmpty;
   }
@@ -47,7 +43,8 @@ public class Sector {
   }
 
   public boolean isNavigable() {
-    return type != SectorType.OBSTRUCTED;
+    return type != SectorType.OBSTRUCTED &&
+        type != SectorType.TEMPORARY;
   }
 
   public boolean clean() {

@@ -18,6 +18,10 @@ public class Robot {
     this.battery = 10;
   }
 
+  public int getBattery() {
+    return battery;
+  }
+
   public String getUuid() {
     return uuid;
   }
@@ -26,23 +30,19 @@ public class Robot {
     return coord;
   }
 
-  public void setCoord(Coord coord) {
-    this.coord = coord;
-  }
-
-  public int getBattery() {
-    return battery;
-  }
-
-  public void setBattery(int battery) {
-    this.battery = battery;
-  }
-
   public RobotState getState() {
     return state;
   }
 
+  public void setCoord(Coord coord) {
+    this.coord = coord;
+  }
+
   public void setState(RobotState state) {
     this.state = state;
+  }
+
+  public void consumeBattery(int amount) {
+    this.battery = Math.max(0, this.battery - amount);
   }
 }

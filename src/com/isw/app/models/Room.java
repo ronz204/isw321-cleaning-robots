@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import com.isw.app.enums.SectorType;
 import com.isw.app.helpers.RandomHelper;
 import com.isw.app.helpers.IdentifierHelper;
+import java.util.stream.Collectors;
 
 public class Room {
   private final String PREFIX = "ROO";
@@ -72,23 +73,29 @@ public class Room {
     return coord.isValidIn(ROWS, COLS);
   }
 
-  public List<Coord> getEmptyCoords() {
-    List<Coord> emptyCoords = new ArrayList<>();
+  public List<Coord> getAllCoords() {
+    List<Coord> coords = new ArrayList<>();
     for (int row = 0; row < ROWS; row++) {
       for (int col = 0; col < COLS; col++) {
-        Coord coord = new Coord(row, col);
-        Sector sector = getSectorAt(coord);
-        if (sector.checkIsEmpty() && sector.getType() != SectorType.OBSTRUCTED) {
-          emptyCoords.add(coord);
-        }
+        coords.add(new Coord(row, col));
       }
     }
-    return emptyCoords;
+    return coords;
+  }
+
+  public List<Coord> getEmptyCoords() {
+    return getAllCoords().stream()
+        .filter(coord -> {
+          Sector sector = getSectorAt(coord);
+          return sector.isEmpty() && sector.isNavigable();
+        })
+        .collect(Collectors.toList());
   }
 
   public boolean hasDirtySectorsNearby(Coord center, int radius) {
     for (int row = Math.max(0, center.getRow() - radius); row <= Math.min(ROWS - 1, center.getRow() + radius); row++) {
-      for (int col = Math.max(0, center.getCol() - radius); col <= Math.min(COLS - 1,center.getCol() + radius); col++) {
+      for (int col = Math.max(0, center.getCol() - radius); col <= Math.min(COLS - 1,
+          center.getCol() + radius); col++) {
         Coord coord = new Coord(row, col);
         if (getSectorAt(coord).getType() == SectorType.DIRTY) {
           return true;
@@ -100,5 +107,22 @@ public class Room {
 
   public void setSectorOccupied(Coord coord, boolean occupied) {
     getSectorAt(coord).setIsEmpty(!occupied);
+  }
+
+  public void updateSectorType(Coord coord, SectorType oldType, SectorType newType) {
+    Sector sector = getSectorAt(coord);
+    sector.setType(newType);
+    
+    decrementSectorCount(oldType);
+    incrementSectorCount(newType);
+  }
+
+  public void decrementSectorCount(SectorType type) {
+    int currentCount = counter.get(type);
+    if (currentCount > 0) counter.put(type, currentCount - 1);
+  }
+
+  public void incrementSectorCount(SectorType type) {
+    counter.put(type, counter.getOrDefault(type, 0) + 1);
   }
 }
