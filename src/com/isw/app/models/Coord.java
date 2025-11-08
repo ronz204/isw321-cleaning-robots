@@ -15,6 +15,19 @@ public class Coord {
   public int getCol() {
     return col;
   }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    Coord coord = (Coord) obj;
+    return row == coord.row && col == coord.col;
+  }
+
+  @Override
+  public int hashCode() {
+    return row * 31 + col;
+  }
   
   public int distanceTo(Coord other) {
     return Math.abs(this.row - other.row) + Math.abs(this.col - other.col);
