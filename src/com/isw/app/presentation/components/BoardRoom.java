@@ -49,15 +49,17 @@ public class BoardRoom extends JPanel {
   }
 
   public void onUpdateRobots(List<Robot> robots) {
-    if (sectorBlocks == null || currentRoom == null) return;
+    if (sectorBlocks == null || currentRoom == null)
+      return;
 
     clearAllRobots();
+    refreshSectors();
 
     for (Robot robot : robots) {
       int row = robot.getCoord().getRow();
       int col = robot.getCoord().getCol();
 
-      if (isValidPosition(row, col)) {
+      if (isValidPosition(row, col) && sectorBlocks[row][col] != null) {
         sectorBlocks[row][col].setRobot(robot);
       }
     }
@@ -76,5 +78,15 @@ public class BoardRoom extends JPanel {
   private boolean isValidPosition(int row, int col) {
     return row >= 0 && row < sectorBlocks.length &&
         col >= 0 && col < sectorBlocks[0].length;
+  }
+
+  private void refreshSectors() {
+    for (int row = 0; row < sectorBlocks.length; row++) {
+      for (int col = 0; col < sectorBlocks[row].length; col++) {
+        if (sectorBlocks[row][col] != null) {
+          sectorBlocks[row][col].updateSectorType();
+        }
+      }
+    }
   }
 }

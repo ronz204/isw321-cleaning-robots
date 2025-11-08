@@ -52,4 +52,8 @@ public class SectorBlock extends JPanel {
   public void removeRobot() {
     setRobot(null);
   }
+
+  public void updateSectorType() {
+    this.setBackground(sector.getType().getColor());
+  }
 }

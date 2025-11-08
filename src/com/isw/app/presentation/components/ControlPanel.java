@@ -27,6 +27,7 @@ public class ControlPanel extends JPanel {
 
   private Runnable onGenerateCall;
   private Runnable onPlacedCall;
+  private Runnable onSimulateCall;
 
   public ControlPanel() {
     buildContainer();
@@ -77,6 +78,7 @@ public class ControlPanel extends JPanel {
   private void buildSimulateButton() {
     simulateButton = new JButton("Simular Limpieza");
     simulateButton.setFocusPainted(false);
+    simulateButton.addActionListener(this::onSimulate);
     simulateButton.setPreferredSize(new Dimension(140, 30));
     buttonPanel.add(simulateButton);
   }
@@ -146,6 +148,16 @@ public class ControlPanel extends JPanel {
   private void onPlaceRobots(ActionEvent e) {
     if (this.onPlacedCall != null) {
       this.onPlacedCall.run();
+    }
+  }
+
+  public void setOnSimulate(Runnable callback) {
+    this.onSimulateCall = callback;
+  }
+
+  private void onSimulate(ActionEvent e) {
+    if (this.onSimulateCall != null) {
+      this.onSimulateCall.run();
     }
   }
 
