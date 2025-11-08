@@ -1,7 +1,7 @@
 package com.isw.app.services;
 
-import java.util.List;
 import java.util.Map;
+import java.util.List;
 import java.util.HashMap;
 import com.isw.app.models.Room;
 import com.isw.app.models.Robot;
@@ -20,61 +20,43 @@ public class EvaluationService {
     return calculateMoveScore(robot, targetCoord, allRobots, room, new HashMap<>());
   }
 
-  public double calculateMoveScore(Robot robot, Coord targetCoord, List<Robot> allRobots, 
+  public double calculateMoveScore(Robot robot, Coord targetCoord, List<Robot> allRobots,
       Room room, Map<Robot, Coord> robotObjectives) {
     Sector targetSector = room.getSectorAt(targetCoord);
 
-    // Immediate high-value targets
-    if (targetSector.getType() == SectorType.DIRTY) {
+    if (targetSector.getType() == SectorType.DIRTY)
       return 5000;
-    }
-
-    if (targetSector.getType() == SectorType.RECHARGE && robot.needsRecharge()) {
+    if (targetSector.getType() == SectorType.RECHARGE && robot.needsRecharge())
       return 10000;
-    }
 
-    double score = calculatePathScore(targetCoord, room, robot, robotObjectives);
-    score += calculateRobotInteractionScore(robot, targetCoord, allRobots, room);
-
-    return score;
+    return calculatePathScore(targetCoord, room, robot, robotObjectives) +
+        calculateRobotInteractionScore(robot, targetCoord, allRobots, room);
   }
 
-  private double calculatePathScore(Coord targetCoord, Room room, Robot robot, 
-      Map<Robot, Coord> robotObjectives) {
-    
-    // Si el robot tiene un objetivo asignado, priorizar moverse hacia él
+  private double calculatePathScore(Coord targetCoord, Room room, Robot robot, Map<Robot, Coord> robotObjectives) {
     Coord assignedObjective = robotObjectives.get(robot);
+
     if (assignedObjective != null) {
       List<Coord> pathToObjective = pathfindingService.findShortestPath(targetCoord, assignedObjective, room);
-      if (pathToObjective != null) {
-        // Mayor score si nos acerca al objetivo asignado
-        return 2000.0 / (pathToObjective.size() + 1);
-      }
+      return pathToObjective != null ? 2000.0 / (pathToObjective.size() + 1) : -100;
     }
 
-    // Fallback al comportamiento original si no hay objetivo asignado
-    List<Coord> dirtySectors = getDirtySectors(room);
+    List<Coord> dirtySectors = room.getCoordsByType(SectorType.DIRTY);
     if (dirtySectors.isEmpty())
       return 0;
 
-    double totalScore = 0;
-    int validPaths = 0;
-
-    for (Coord dirty : dirtySectors) {
-      List<Coord> path = pathfindingService.findShortestPath(targetCoord, dirty, room);
-      if (path != null && !path.isEmpty()) {
-        totalScore += 1000.0 / (path.size() + 1);
-        validPaths++;
-      }
-    }
-
-    return validPaths > 0 ? totalScore / validPaths : 0;
+    return dirtySectors.stream()
+        .mapToDouble(dirty -> {
+          List<Coord> path = pathfindingService.findShortestPath(targetCoord, dirty, room);
+          return path != null && !path.isEmpty() ? 1000.0 / (path.size() + 1) : 0;
+        })
+        .average()
+        .orElse(0);
   }
 
   private double calculateRobotInteractionScore(Robot robot, Coord targetCoord, List<Robot> allRobots, Room room) {
     double score = 0;
 
-    // Encourage moving away after recharging
     if (robot.justRecharged()) {
       List<Coord> rechargeStations = room.getRechargeCoords();
       if (!rechargeStations.isEmpty()) {
@@ -83,8 +65,9 @@ public class EvaluationService {
       }
     }
 
-    // Penalize nearby robots
-    int nearbyRobots = countNearbyRobots(targetCoord, allRobots);
+    long nearbyRobots = allRobots.stream()
+        .filter(r -> targetCoord.distanceTo(r.getCoord()) <= 1)
+        .count();
     score -= nearbyRobots * 300;
 
     return score;
@@ -94,17 +77,5 @@ public class EvaluationService {
     return coords.stream()
         .min((c1, c2) -> Integer.compare(target.distanceTo(c1), target.distanceTo(c2)))
         .orElse(null);
-  }
-
-  private int countNearbyRobots(Coord center, List<Robot> robots) {
-    return (int) robots.stream()
-        .filter(robot -> center.distanceTo(robot.getCoord()) <= 1)
-        .count();
-  }
-
-  private List<Coord> getDirtySectors(Room room) {
-    return room.getAllCoords().stream()
-        .filter(coord -> room.getSectorAt(coord).getType() == SectorType.DIRTY)
-        .toList();
   }
 }

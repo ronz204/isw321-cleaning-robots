@@ -1,43 +1,46 @@
 package com.isw.app.services;
 
-import java.util.List;
 import java.util.Map;
+import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 import java.util.Comparator;
 import com.isw.app.models.Room;
 import com.isw.app.models.Robot;
 import com.isw.app.models.Coord;
+import java.util.stream.Collectors;
 import com.isw.app.enums.SectorType;
 import com.isw.app.models.TargetPair;
 
 public class AssignmentService {
   private final PathfindingService pathfindingService;
+  private static final int OPTIMIZATION_THRESHOLD = 5;
 
   public AssignmentService(PathfindingService pathfindingService) {
     this.pathfindingService = pathfindingService;
   }
 
   public Map<Robot, Coord> assignObjectives(List<Robot> robots, Room room) {
-    Map<Robot, Coord> assignments = new HashMap<>();
+    List<Coord> availableTargets = room.getCoordsByType(SectorType.DIRTY);
 
-    // Obtener todos los sectores sucios disponibles
-    List<Coord> dirtyCoords = getDirtyCoords(room);
-    List<Coord> availableTargets = new ArrayList<>(dirtyCoords);
-
-    // Filtrar robots que necesitan recarga - no les asignamos objetivos de limpieza
     List<Robot> robotsForCleaning = robots.stream()
         .filter(robot -> !robot.needsRecharge() || robot.justRecharged())
         .collect(Collectors.toList());
 
-    // Si quedan pocos objetivos, optimizar asignaciones
-    if (shouldOptimizeForFewTargets(robotsForCleaning, availableTargets)) {
-      return assignOptimizedObjectives(robotsForCleaning, availableTargets, room);
-    }
+    return shouldOptimizeForFewTargets(robotsForCleaning.size(), availableTargets.size())
+        ? assignOptimizedObjectives(robotsForCleaning, availableTargets, room)
+        : assignNormalObjectives(robotsForCleaning, availableTargets, room);
+  }
 
-    // Asignación normal para muchos objetivos
-    for (Robot robot : robotsForCleaning) {
+  private boolean shouldOptimizeForFewTargets(int robotCount, int targetCount) {
+    return targetCount <= robotCount || targetCount <= OPTIMIZATION_THRESHOLD;
+  }
+
+  private Map<Robot, Coord> assignNormalObjectives(List<Robot> robots, List<Coord> targets, Room room) {
+    Map<Robot, Coord> assignments = new HashMap<>();
+    List<Coord> availableTargets = new ArrayList<>(targets);
+
+    for (Robot robot : robots) {
       if (availableTargets.isEmpty())
         break;
 
@@ -51,69 +54,46 @@ public class AssignmentService {
     return assignments;
   }
 
-  private boolean shouldOptimizeForFewTargets(List<Robot> robots, List<Coord> targets) {
-    // Optimizar cuando hay más robots que objetivos o cuando quedan pocos objetivos
-    return targets.size() <= robots.size() || targets.size() <= 5;
-  }
-
   private Map<Robot, Coord> assignOptimizedObjectives(List<Robot> robots, List<Coord> targets, Room room) {
-    Map<Robot, Coord> assignments = new HashMap<>();
+    if (targets.isEmpty())
+      return new HashMap<>();
 
-    if (targets.isEmpty()) {
-      return assignments;
-    }
-
-    // Calcular distancias de todos los robots a todos los objetivos
     Map<Robot, Map<Coord, Integer>> robotDistances = calculateAllDistances(robots, targets, room);
-
-    // Seleccionar los robots más eficientes para cada objetivo
     List<TargetPair> optimalPairs = findOptimalAssignments(robotDistances, targets);
 
-    // Limitar a los robots más cercanos necesarios
-    int robotsNeeded = Math.min(targets.size(), robots.size());
-    for (int i = 0; i < robotsNeeded && i < optimalPairs.size(); i++) {
-      TargetPair pair = optimalPairs.get(i);
-      assignments.put(pair.getRobot(), pair.getTarget());
-    }
-
-    return assignments;
+    return optimalPairs.stream()
+        .limit(Math.min(targets.size(), robots.size()))
+        .collect(Collectors.toMap(
+            TargetPair::getRobot,
+            TargetPair::getTarget,
+            (existing, replacement) -> existing
+        ));
   }
 
   private Map<Robot, Map<Coord, Integer>> calculateAllDistances(List<Robot> robots, List<Coord> targets, Room room) {
-    Map<Robot, Map<Coord, Integer>> distances = new HashMap<>();
-
-    for (Robot robot : robots) {
-      Map<Coord, Integer> robotDistances = new HashMap<>();
-      for (Coord target : targets) {
-        List<Coord> path = pathfindingService.findShortestPath(robot.getCoord(), target, room);
-        int distance = path != null ? path.size() : Integer.MAX_VALUE;
-        robotDistances.put(target, distance);
-      }
-      distances.put(robot, robotDistances);
-    }
-
-    return distances;
+    return robots.stream()
+        .collect(Collectors.toMap(
+            robot -> robot,
+            robot -> targets.stream()
+                .collect(Collectors.toMap(
+                    target -> target,
+                    target -> {
+                      List<Coord> path = pathfindingService.findShortestPath(robot.getCoord(), target, room);
+                      return path != null ? path.size() : Integer.MAX_VALUE;
+                    }))));
   }
 
-  private List<TargetPair> findOptimalAssignments(Map<Robot, Map<Coord, Integer>> robotDistances,
-      List<Coord> targets) {
-    List<TargetPair> allPairs = new ArrayList<>();
+  private List<TargetPair> findOptimalAssignments(Map<Robot, Map<Coord, Integer>> robotDistances, List<Coord> targets) {
+    List<TargetPair> allPairs = robotDistances.entrySet().stream()
+        .flatMap(robotEntry -> robotEntry.getValue().entrySet().stream()
+            .filter(distanceEntry -> distanceEntry.getValue() != Integer.MAX_VALUE)
+            .map(distanceEntry -> new TargetPair(
+                robotEntry.getKey(),
+                distanceEntry.getKey(),
+                distanceEntry.getValue())))
+        .sorted(Comparator.comparing(TargetPair::getDistance))
+        .collect(Collectors.toList());
 
-    // Crear todas las combinaciones robot-objetivo posibles
-    for (Robot robot : robotDistances.keySet()) {
-      for (Coord target : targets) {
-        int distance = robotDistances.get(robot).get(target);
-        if (distance != Integer.MAX_VALUE) {
-          allPairs.add(new TargetPair(robot, target, distance));
-        }
-      }
-    }
-
-    // Ordenar por distancia (los más cercanos primero)
-    allPairs.sort(Comparator.comparing(TargetPair::getDistance));
-
-    // Asignación greedy: tomar las mejores asignaciones sin repetir robots ni
-    // objetivos
     List<TargetPair> selectedPairs = new ArrayList<>();
     List<Robot> assignedRobots = new ArrayList<>();
     List<Coord> assignedTargets = new ArrayList<>();
@@ -124,10 +104,8 @@ public class AssignmentService {
         assignedRobots.add(pair.getRobot());
         assignedTargets.add(pair.getTarget());
 
-        // Si ya asignamos todos los objetivos, terminamos
-        if (assignedTargets.size() >= targets.size()) {
+        if (assignedTargets.size() >= targets.size())
           break;
-        }
       }
     }
 
@@ -135,26 +113,14 @@ public class AssignmentService {
   }
 
   private Coord findBestTargetForRobot(Robot robot, List<Coord> availableTargets, Room room) {
-    Coord bestTarget = null;
-    int shortestDistance = Integer.MAX_VALUE;
-
-    for (Coord target : availableTargets) {
-      List<Coord> path = pathfindingService.findShortestPath(robot.getCoord(), target, room);
-      if (path != null) {
-        int distance = path.size();
-        if (distance < shortestDistance) {
-          shortestDistance = distance;
-          bestTarget = target;
-        }
-      }
-    }
-
-    return bestTarget;
-  }
-
-  private List<Coord> getDirtyCoords(Room room) {
-    return room.getAllCoords().stream()
-        .filter(coord -> room.getSectorAt(coord).getType() == SectorType.DIRTY)
-        .collect(Collectors.toList());
+    return availableTargets.stream()
+        .map(target -> {
+          List<Coord> path = pathfindingService.findShortestPath(robot.getCoord(), target, room);
+          return new TargetPair(robot, target, path != null ? path.size() : Integer.MAX_VALUE);
+        })
+        .filter(pair -> pair.getDistance() != Integer.MAX_VALUE)
+        .min(Comparator.comparing(TargetPair::getDistance))
+        .map(TargetPair::getTarget)
+        .orElse(null);
   }
 }
