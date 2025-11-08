@@ -1,6 +1,8 @@
 package com.isw.app.services;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import com.isw.app.models.Room;
 import com.isw.app.models.Robot;
 import com.isw.app.models.Coord;
@@ -15,6 +17,11 @@ public class EvaluationService {
   }
 
   public double calculateMoveScore(Robot robot, Coord targetCoord, List<Robot> allRobots, Room room) {
+    return calculateMoveScore(robot, targetCoord, allRobots, room, new HashMap<>());
+  }
+
+  public double calculateMoveScore(Robot robot, Coord targetCoord, List<Robot> allRobots, 
+      Room room, Map<Robot, Coord> robotObjectives) {
     Sector targetSector = room.getSectorAt(targetCoord);
 
     // Immediate high-value targets
@@ -26,13 +33,26 @@ public class EvaluationService {
       return 10000;
     }
 
-    double score = calculatePathScore(targetCoord, room);
+    double score = calculatePathScore(targetCoord, room, robot, robotObjectives);
     score += calculateRobotInteractionScore(robot, targetCoord, allRobots, room);
 
     return score;
   }
 
-  private double calculatePathScore(Coord targetCoord, Room room) {
+  private double calculatePathScore(Coord targetCoord, Room room, Robot robot, 
+      Map<Robot, Coord> robotObjectives) {
+    
+    // Si el robot tiene un objetivo asignado, priorizar moverse hacia él
+    Coord assignedObjective = robotObjectives.get(robot);
+    if (assignedObjective != null) {
+      List<Coord> pathToObjective = pathfindingService.findShortestPath(targetCoord, assignedObjective, room);
+      if (pathToObjective != null) {
+        // Mayor score si nos acerca al objetivo asignado
+        return 2000.0 / (pathToObjective.size() + 1);
+      }
+    }
+
+    // Fallback al comportamiento original si no hay objetivo asignado
     List<Coord> dirtySectors = getDirtySectors(room);
     if (dirtySectors.isEmpty())
       return 0;

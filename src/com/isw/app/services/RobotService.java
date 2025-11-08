@@ -19,11 +19,11 @@ public class RobotService {
   public List<Robot> generate(Room room) {
     List<Coord> emptyCoords = room.getEmptyCoords();
     emptyCoords = emptyCoords.stream()
-      .filter(coord -> {
-        Sector sector = room.getSectorAt(coord);
-        return sector.isNavigable();
-      })
-      .collect(Collectors.toList());
+        .filter(coord -> {
+          Sector sector = room.getSectorAt(coord);
+          return sector.isNavigable();
+        })
+        .collect(Collectors.toList());
 
     if (emptyCoords.isEmpty()) {
       return new ArrayList<>();
@@ -45,7 +45,7 @@ public class RobotService {
       return robots;
     } catch (Exception e) {
       e.printStackTrace();
-      return null;
+      return new ArrayList<>(); // Return empty list instead of null
     }
   }
 
@@ -53,10 +53,14 @@ public class RobotService {
     Map<SectorType, Integer> counter = room.getSectorCounter();
     int totalSectors = room.getTotalSectors();
 
-    int dirtySectors = counter.get(SectorType.DIRTY);
-    int obstacles = counter.get(SectorType.OBSTRUCTED) + counter.get(SectorType.TEMPORARY);
-    int rechargeSectors = counter.get(SectorType.RECHARGE);
-    int cleanSectors = counter.get(SectorType.CLEAN);
+    int dirtySectors = counter.getOrDefault(SectorType.DIRTY, 0);
+    int obstacles = counter.getOrDefault(SectorType.OBSTRUCTED, 0) +
+        counter.getOrDefault(SectorType.TEMPORARY, 0);
+    int rechargeSectors = counter.getOrDefault(SectorType.RECHARGE, 0);
+    int cleanSectors = counter.getOrDefault(SectorType.CLEAN, 0);
+
+    if (dirtySectors == 0)
+      return 1; // At least one robot
 
     double baseFactor = Math.ceil(dirtySectors / 12.0);
     double complexityFactor = 1 + (obstacles * 0.15 / totalSectors);
@@ -77,12 +81,12 @@ public class RobotService {
     for (int row = 0; row < room.getRows(); row++) {
       for (int col = 0; col < room.getCols(); col++) {
         Coord coord = new Coord(row, col);
-        
+
         if (room.isValidCoord(coord)) {
           Sector sector = room.getSectorAt(coord);
-          
+
           if (sector.getType() == SectorType.CLEAN && sector.isEmpty()) {
-            if (room.hasDirtySectorsNearby(coord, 2)) {
+            if (hasDirtySectorsNearby(room, coord, 2)) {
               priorityPositions.add(coord);
             } else {
               regularPositions.add(coord);
@@ -94,6 +98,21 @@ public class RobotService {
 
     priorityPositions.addAll(regularPositions);
     return priorityPositions;
+  }
+
+  // Add this helper method
+  private boolean hasDirtySectorsNearby(Room room, Coord center, int radius) {
+    for (int row = 0; row < room.getRows(); row++) {
+      for (int col = 0; col < room.getCols(); col++) {
+        Coord coord = new Coord(row, col);
+        if (room.isValidCoord(coord) && center.distanceTo(coord) <= radius) {
+          if (room.getSectorAt(coord).getType() == SectorType.DIRTY) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
   }
 
   public List<Decision> calculateMovements(List<Robot> robots, Room room) {
