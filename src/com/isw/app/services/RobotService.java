@@ -7,13 +7,28 @@ import com.isw.app.models.Room;
 import com.isw.app.models.Robot;
 import com.isw.app.models.Coord;
 import com.isw.app.models.Sector;
+import java.util.stream.Collectors;
 import com.isw.app.enums.SectorType;
+import com.isw.app.models.Decision;
 import com.isw.app.repositories.RobotRepository;
 
 public class RobotService {
   private final RobotRepository repository = new RobotRepository();
+  private final MovementService movementService = new MovementService();
 
   public List<Robot> generate(Room room) {
+    List<Coord> emptyCoords = room.getEmptyCoords();
+    emptyCoords = emptyCoords.stream()
+      .filter(coord -> {
+        Sector sector = room.getSectorAt(coord);
+        return sector.isNavigable();
+      })
+      .collect(Collectors.toList());
+
+    if (emptyCoords.isEmpty()) {
+      return new ArrayList<>();
+    }
+
     try {
       List<Robot> robots = new ArrayList<>();
       int robotCount = calculateOptimalRobotCount(room);
@@ -62,13 +77,16 @@ public class RobotService {
     for (int row = 0; row < room.getRows(); row++) {
       for (int col = 0; col < room.getCols(); col++) {
         Coord coord = new Coord(row, col);
-        Sector sector = room.getSectorAt(coord);
         
-        if (sector.getType() == SectorType.CLEAN && sector.checkIsEmpty()) {
-          if (room.hasDirtySectorsNearby(coord, 2)) {
-            priorityPositions.add(coord);
-          } else {
-            regularPositions.add(coord);
+        if (room.isValidCoord(coord)) {
+          Sector sector = room.getSectorAt(coord);
+          
+          if (sector.getType() == SectorType.CLEAN && sector.isEmpty()) {
+            if (room.hasDirtySectorsNearby(coord, 2)) {
+              priorityPositions.add(coord);
+            } else {
+              regularPositions.add(coord);
+            }
           }
         }
       }
@@ -76,5 +94,24 @@ public class RobotService {
 
     priorityPositions.addAll(regularPositions);
     return priorityPositions;
+  }
+
+  public List<Decision> calculateMovements(List<Robot> robots, Room room) {
+    return movementService.calculateMovements(robots, room);
+  }
+
+  public void executeMovements(List<Decision> decisions, Room room) {
+    for (Decision decision : decisions) {
+      if (decision.hasValidMovement()) {
+        Robot robot = decision.getRobot();
+        moveRobot(robot, decision.getTargetCoord(), room);
+      }
+    }
+  }
+
+  private void moveRobot(Robot robot, Coord newCoord, Room room) {
+    room.setSectorOccupied(robot.getCoord(), false);
+    robot.setCoord(newCoord);
+    room.setSectorOccupied(newCoord, true);
   }
 }
