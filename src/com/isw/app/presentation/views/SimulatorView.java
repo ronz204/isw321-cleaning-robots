@@ -10,6 +10,8 @@ import com.isw.app.services.RoomService;
 import com.isw.app.services.RobotService;
 import com.isw.app.presentation.components.BoardRoom;
 import com.isw.app.presentation.components.ControlPanel;
+import java.util.List;
+import com.isw.app.models.Robot;
 
 public class SimulatorView extends BaseView {
   private final RoomService roomService = new RoomService();
@@ -86,6 +88,8 @@ public class SimulatorView extends BaseView {
   }
 
   public void onPlaceRobots() {
-    robotService.generate(room);
+    if (room == null) return;
+    List<Robot> robots = robotService.generate(room);
+    boardRoom.onUpdateRobots(robots);
   }
 }
