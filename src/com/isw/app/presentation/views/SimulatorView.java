@@ -1,27 +1,26 @@
 package com.isw.app.presentation.views;
 
+import java.util.List;
 import java.awt.Color;
+import javax.swing.Timer;
 import java.awt.Dimension;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
+import javax.swing.JOptionPane;
 import com.isw.app.models.Room;
-import com.isw.app.services.RoomService;
-import com.isw.app.services.RobotService;
+import com.isw.app.models.Robot;
+import com.isw.app.models.Cleaning;
+import com.isw.app.models.StepResult;
+import com.isw.app.services.CleaningService;
 import com.isw.app.presentation.components.BoardRoom;
 import com.isw.app.presentation.components.ControlPanel;
-import java.util.List;
-import com.isw.app.models.Robot;
 
 public class SimulatorView extends BaseView {
-  private final RoomService roomService = new RoomService();
-  private final RobotService robotService = new RobotService();
+  private final CleaningService cleaningService = new CleaningService();
 
-  public SimulatorView() {
-    super(SimulatorView.class.getName());
-  }
-
-  private Room room;
+  private Cleaning cleaning;
+  private Timer simulationTimer;
 
   private JFrame frame;
   private JPanel leftPanel;
@@ -30,6 +29,10 @@ public class SimulatorView extends BaseView {
 
   private BoardRoom boardRoom;
   private ControlPanel controlPanel;
+
+  public SimulatorView() {
+    super(SimulatorView.class.getName());
+  }
 
   public void display() {
     buildFrame();
@@ -79,17 +82,90 @@ public class SimulatorView extends BaseView {
     controlPanel = new ControlPanel();
     controlPanel.setOnGenerate(this::onGenerateBoard);
     controlPanel.setOnPlaced(this::onPlaceRobots);
+    controlPanel.setOnSimulate(this::onStartSimulation);
     leftPanel.add(controlPanel, BorderLayout.CENTER);
   }
 
   private void onGenerateBoard() {
-    room = roomService.generate();
-    boardRoom.onUpdateRoom(room);
+    Room room = cleaningService.generateRoom();
+    if (room != null) {
+      cleaning = new Cleaning(room, null);
+      boardRoom.onUpdateRoom(room);
+    }
   }
 
-  public void onPlaceRobots() {
-    if (room == null) return;
-    List<Robot> robots = robotService.generate(room);
+  private void onPlaceRobots() {
+    if (cleaning == null || cleaning.getRoom() == null) {
+      return;
+    }
+
+    List<Robot> robots = cleaningService.generateRobots(cleaning.getRoom());
+    cleaning = new Cleaning(cleaning.getRoom(), robots);
     boardRoom.onUpdateRobots(robots);
+  }
+
+  private void onStartSimulation() {
+    if (cleaning == null || !cleaning.isValid()) {
+      return;
+    }
+
+    if (cleaning.isActive()) {
+      stopSimulation();
+    } else {
+      startSimulation();
+    }
+  }
+
+  private void startSimulation() {
+    cleaningService.startCleaning(cleaning);
+
+    simulationTimer = new Timer(500, e -> {
+      StepResult result = cleaningService.executeStep(cleaning);
+
+      if (result != null) {
+        boardRoom.onUpdateRobots(result.getRobots());
+
+        if (result.isComplete()) {
+          stopSimulation();
+          showSimulationResults();
+        }
+      }
+    });
+
+    simulationTimer.start();
+  }
+
+  private void showSimulationResults() {
+    List<Robot> robots = cleaning.getRobots();
+    Room room = cleaning.getRoom();
+
+    int cleanSectors = room.getSectorCounter().getOrDefault(com.isw.app.enums.SectorType.CLEAN, 0);
+
+    String message = String.format(
+        "🤖 SIMULACIÓN COMPLETADA 🤖\n\n" +
+            "📊 Estadísticas:\n" +
+            "═══════════════════════════\n" +
+            "🤖 Robots totales: %d\n" +
+            "🟢 Robots activos: %d\n" +
+            "🧽 Sectores limpiados: %d/%d\n" +
+            "⏱️ Total de pasos: %d\n" +
+            "✨ Progreso total: %.1f%%",
+        robots.size(),
+        (int) robots.stream().filter(r -> r.getBattery() > 0).count(),
+        cleanSectors,
+        room.getTotalSectors(),
+        cleaning.getTotalSteps(),
+        cleaning.getCompletionPercentage());
+
+    JOptionPane.showMessageDialog(frame, message, "Resultados de la Simulación", JOptionPane.INFORMATION_MESSAGE);
+  }
+
+  private void stopSimulation() {
+    if (simulationTimer != null) {
+      simulationTimer.stop();
+    }
+    if (cleaning != null) {
+      cleaningService.stopCleaning(cleaning);
+    }
   }
 }
