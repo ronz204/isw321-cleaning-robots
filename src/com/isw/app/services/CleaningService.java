@@ -16,16 +16,19 @@ import com.isw.app.enums.SectorType;
 import com.isw.app.enums.RobotState;
 import com.isw.app.repositories.RoomRepository;
 import com.isw.app.repositories.RobotRepository;
+import com.isw.app.repositories.HistoryRepository;
 
 public class CleaningService {
   private final RoomRepository roomRepository;
   private final RobotRepository robotRepository;
+  private final HistoryRepository historyRepository;
   private final MovementService movementService;
   private final CalculationService calculationService;
 
   public CleaningService() {
     this.roomRepository = new RoomRepository();
     this.robotRepository = new RobotRepository();
+    this.historyRepository = new HistoryRepository();
     this.movementService = new MovementService();
     this.calculationService = new CalculationService();
   }
@@ -86,6 +89,10 @@ public class CleaningService {
 
     cleaning.incrementSteps();
     cleaning.addCleanedSectors(sectorsCleanedThisStep);
+
+    for (Decision decision : decisions) {
+      historyRepository.logStep(cleaning.getTotalSteps(), decision);
+    }
 
     boolean isComplete = isSimulationComplete(cleaning.getRoom(), cleaning.getRobots());
     if (isComplete) {
