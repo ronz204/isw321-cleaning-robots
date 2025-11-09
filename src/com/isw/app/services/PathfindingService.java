@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import com.isw.app.models.Room;
 import com.isw.app.models.Coord;
 import com.isw.app.enums.SectorType;
+import java.util.stream.Collectors;
 
 public class PathfindingService {
 
@@ -77,7 +78,7 @@ public class PathfindingService {
         .orElse(0);
   }
 
-  private List<Coord> getAdjacentCoords(Coord current, Room room) {
+  public List<Coord> getAdjacentCoords(Coord current, Room room) {
     List<Coord> adjacent = new ArrayList<>();
     int[][] directions = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
 
@@ -89,6 +90,15 @@ public class PathfindingService {
     }
 
     return adjacent;
+  }
+
+  public List<Coord> getValidAdjacentCoords(Coord current, Room room) {
+    return getAdjacentCoords(current, room).stream()
+        .filter(coord -> {
+          SectorType type = room.getSectorAt(coord).getType();
+          return type != SectorType.OBSTRUCTED && type != SectorType.TEMPORARY;
+        })
+        .collect(Collectors.toList());
   }
 
   private List<Coord> reconstructPath(Map<Coord, Coord> parent, Coord goal) {

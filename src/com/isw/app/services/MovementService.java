@@ -2,7 +2,6 @@ package com.isw.app.services;
 
 import java.util.Map;
 import java.util.List;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Comparator;
 import com.isw.app.models.Room;
@@ -85,7 +84,7 @@ public class MovementService {
 
   private Coord findExitFromRecharge(Robot robot, Room room, List<Coord> reservedCoords, 
                                      Map<Robot, Coord> assignments) {
-    List<Coord> adjacentCoords = getValidAdjacentCoords(robot.getCoord(), room);
+    List<Coord> adjacentCoords = pathfindingService.getValidAdjacentCoords(robot.getCoord(), room);
     Coord assignedTarget = assignments.get(robot);
     
     return adjacentCoords.stream()
@@ -119,23 +118,10 @@ public class MovementService {
   }
 
   private Coord findAlternativeMove(Robot robot, Room room, List<Coord> reservedCoords, Coord target) {
-    return getValidAdjacentCoords(robot.getCoord(), room).stream()
-        .filter(coord -> !reservedCoords.contains(coord))
-        .filter(coord -> room.getSectorAt(coord).isEmpty())
-        .min(Comparator.comparing(c -> c.distanceTo(target)))
-        .orElse(null);
-  }
-
-  private List<Coord> getValidAdjacentCoords(Coord current, Room room) {
-    int[][] directions = { { -1, 0 }, { 1, 0 }, { 0, -1 }, { 0, 1 } };
-    
-    return Arrays.stream(directions)
-        .map(dir -> new Coord(current.getRow() + dir[0], current.getCol() + dir[1]))
-        .filter(room::isValidCoord)
-        .filter(coord -> {
-          SectorType type = room.getSectorAt(coord).getType();
-          return type != SectorType.OBSTRUCTED && type != SectorType.TEMPORARY;
-        })
-        .collect(Collectors.toList());
+    return pathfindingService.getValidAdjacentCoords(robot.getCoord(), room).stream()
+      .filter(coord -> !reservedCoords.contains(coord))
+      .filter(coord -> room.getSectorAt(coord).isEmpty())
+      .min(Comparator.comparing(c -> c.distanceTo(target)))
+      .orElse(null);
   }
 }
