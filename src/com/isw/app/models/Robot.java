@@ -4,12 +4,13 @@ import com.isw.app.enums.RobotState;
 import com.isw.app.helpers.IdentifierHelper;
 
 public class Robot {
-  private final String PREFIX = "ROB";
+  private static final String PREFIX = "ROB";
   private static final int MAX_BATTERY = 20;
   private static final int INITIAL_BATTERY = 10;
   private static final int RECHARGE_AMOUNT = 10;
+  private static final int CRITICAL_BATTERY = 2;
 
-  private String uuid;
+  private final String uuid;
   private Coord coord;
   private int battery;
   private RobotState state;
@@ -18,11 +19,10 @@ public class Robot {
 
   public Robot(Coord coord) {
     this.uuid = IdentifierHelper.generate(PREFIX);
+    this.coord = coord;
     this.battery = INITIAL_BATTERY;
     this.state = RobotState.ACTIVE;
     this.needsRecharge = false;
-    this.lastRechargePosition = null;
-    this.coord = coord;
   }
 
   public String getUuid() {
@@ -68,7 +68,7 @@ public class Robot {
   }
 
   public boolean isAtRechargePosition() {
-    return lastRechargePosition != null && lastRechargePosition.equals(this.coord);
+    return lastRechargePosition != null && lastRechargePosition.equals(coord);
   }
 
   public void clearRechargePosition() {
@@ -76,14 +76,6 @@ public class Robot {
   }
 
   public boolean shouldSeekRecharge(int distanceToNearestRecharge) {
-    // Si tiene muy poca batería, buscar recarga urgentemente
-    if (this.battery <= 2) return true;
-    
-    // Si no puede completar el viaje de ida y vuelta a la recarga más cercana
-    return this.battery <= distanceToNearestRecharge + 2;
-  }
-
-  public boolean canCompleteTrip(int distance) {
-    return this.battery >= distance + 2;
+    return battery <= CRITICAL_BATTERY || battery <= distanceToNearestRecharge + CRITICAL_BATTERY;
   }
 }

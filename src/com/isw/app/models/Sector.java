@@ -5,10 +5,12 @@ import com.isw.app.helpers.IdentifierHelper;
 import com.isw.app.helpers.RandomHelper;
 
 public class Sector {
-  private final String PREFIX = "SEC";
+  private static final String PREFIX = "SEC";
+  private static final int MIN_TEMP_TIME = 2;
+  private static final int MAX_TEMP_TIME = 6;
 
-  private String uuid;
-  private Coord coord;
+  private final String uuid;
+  private final Coord coord;
   private SectorType type;
   private boolean isEmpty;
   private Integer temporaryTimer;
@@ -16,12 +18,12 @@ public class Sector {
 
   public Sector(Coord coord, SectorType type) {
     this.uuid = IdentifierHelper.generate(PREFIX);
-    this.isEmpty = true;
     this.coord = coord;
     this.type = type;
-    
+    this.isEmpty = true;
+
     if (type == SectorType.TEMPORARY) {
-      this.temporaryTimer = RandomHelper.getRandomInt(2, 6);
+      this.temporaryTimer = RandomHelper.getRandomInt(MIN_TEMP_TIME, MAX_TEMP_TIME);
     }
   }
 
@@ -37,16 +39,20 @@ public class Sector {
     return type;
   }
 
+  public boolean isEmpty() {
+    return isEmpty;
+  }
+
+  public Integer getTemporaryTimer() {
+    return temporaryTimer;
+  }
+
   public void setType(SectorType type) {
     this.type = type;
   }
 
   public void setIsEmpty(boolean isEmpty) {
     this.isEmpty = isEmpty;
-  }
-
-  public boolean isEmpty() {
-    return isEmpty;
   }
 
   public boolean isNavigable() {
@@ -61,10 +67,6 @@ public class Sector {
     return false;
   }
 
-  public Integer getTemporaryTimer() {
-    return temporaryTimer;
-  }
-
   public void startTemporaryTimer() {
     if (type == SectorType.TEMPORARY && temporaryStartTime == 0) {
       temporaryStartTime = System.currentTimeMillis();
@@ -73,25 +75,22 @@ public class Sector {
 
   public boolean updateTemporaryTimer() {
     if (!isTemporary() || temporaryStartTime == 0) {
-      if (isTemporary()) startTemporaryTimer();
+      if (isTemporary())
+        startTemporaryTimer();
       return false;
     }
 
-    int elapsed = getElapsedSeconds();
-    
-    if (elapsed >= temporaryTimer) {
+    if (getElapsedSeconds() >= temporaryTimer) {
       convertToClean();
       return true;
     }
-    
+
     return false;
   }
 
   public int getRemainingTime() {
-    if (!isTemporary() || temporaryStartTime == 0) {
+    if (!isTemporary() || temporaryStartTime == 0)
       return 0;
-    }
-    
     return Math.max(0, temporaryTimer - getElapsedSeconds());
   }
 
