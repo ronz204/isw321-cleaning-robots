@@ -143,6 +143,13 @@ public class Room {
         .orElse(Integer.MAX_VALUE);
   }
 
+  public int getDistanceToNearestDirty(Coord coord) {
+    return getCoordsByType(SectorType.DIRTY).stream()
+        .mapToInt(coord::distanceTo)
+        .min()
+        .orElse(Integer.MAX_VALUE);
+  }
+
   public void startTemporaryTimers() {
     forEachSector(sector -> {
       if (sector.getType() == SectorType.TEMPORARY) {

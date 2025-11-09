@@ -14,14 +14,14 @@ public class Robot {
   private int battery;
   private RobotState state;
   private boolean needsRecharge;
-  private boolean justRecharged;
+  private Coord lastRechargePosition;
 
   public Robot(Coord coord) {
     this.uuid = IdentifierHelper.generate(PREFIX);
     this.battery = INITIAL_BATTERY;
     this.state = RobotState.ACTIVE;
     this.needsRecharge = false;
-    this.justRecharged = false;
+    this.lastRechargePosition = null;
     this.coord = coord;
   }
 
@@ -45,10 +45,6 @@ public class Robot {
     return needsRecharge;
   }
 
-  public boolean justRecharged() {
-    return justRecharged;
-  }
-
   public void setCoord(Coord coord) {
     this.coord = coord;
   }
@@ -63,20 +59,31 @@ public class Robot {
 
   public void consumeBattery(int amount) {
     this.battery = Math.max(0, this.battery - amount);
-    if (this.justRecharged) {
-      this.justRecharged = false;
-    }
   }
 
   public void rechargeBattery() {
     this.battery = Math.min(MAX_BATTERY, this.battery + RECHARGE_AMOUNT);
     this.needsRecharge = false;
-    this.justRecharged = true;
+    this.lastRechargePosition = this.coord;
+  }
+
+  public boolean isAtRechargePosition() {
+    return lastRechargePosition != null && lastRechargePosition.equals(this.coord);
+  }
+
+  public void clearRechargePosition() {
+    this.lastRechargePosition = null;
   }
 
   public boolean shouldSeekRecharge(int distanceToNearestRecharge) {
-    if (justRecharged)
-      return false;
-    return this.battery <= 2 || this.battery <= distanceToNearestRecharge + 1;
+    // Si tiene muy poca batería, buscar recarga urgentemente
+    if (this.battery <= 2) return true;
+    
+    // Si no puede completar el viaje de ida y vuelta a la recarga más cercana
+    return this.battery <= distanceToNearestRecharge + 2;
+  }
+
+  public boolean canCompleteTrip(int distance) {
+    return this.battery >= distance + 2;
   }
 }
