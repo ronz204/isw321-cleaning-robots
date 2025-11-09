@@ -56,12 +56,30 @@ public class MovementService {
       return new Decision(robot, null);
     }
 
-    if (navigationService.isRechargeOccupied(room, assignedTarget)) {
+    // Verificar si el objetivo es una estación de recarga ocupada - ESPERAR
+    if (isOccupiedRecharge(assignedTarget, room)) {
       return new Decision(robot, null);
     }
 
+    // Primero calcular el siguiente movimiento
     Coord nextMove = findNextMove(robot, assignedTarget, room, reservedCoords);
-    return new Decision(robot, nextMove != null ? new Movement(nextMove, DEFAULT_SCORE) : null);
+    
+    // Si no hay movimiento válido, quedarse quieto
+    if (nextMove == null) {
+      return new Decision(robot, null);
+    }
+
+    // ANTES de moverse, verificar si el siguiente paso es hacia una recarga ocupada
+    if (isOccupiedRecharge(nextMove, room)) {
+      return new Decision(robot, null); // Quedarse quieto y esperar
+    }
+
+    return new Decision(robot, new Movement(nextMove, DEFAULT_SCORE));
+  }
+
+  private boolean isOccupiedRecharge(Coord coord, Room room) {
+    return room.getSectorAt(coord).getType() == SectorType.RECHARGE &&
+        navigationService.isRechargeOccupied(room, coord);
   }
 
   private Decision createExitDecision(Robot robot, Room room, List<Coord> reservedCoords,
