@@ -1,8 +1,16 @@
 package com.isw.app.services;
 
-import java.util.*;
+import java.util.Map;
+import java.util.List;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Comparator;
+import com.isw.app.models.Room;
+import com.isw.app.models.Coord;
+import com.isw.app.models.Robot;
 import java.util.stream.Collectors;
-import com.isw.app.models.*;
+import com.isw.app.models.Decision;
+import com.isw.app.models.Movement;
 import com.isw.app.enums.SectorType;
 
 public class MovementService {
