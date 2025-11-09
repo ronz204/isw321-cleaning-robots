@@ -14,11 +14,11 @@ public class RobotRepository {
   public void save(Robot robot) throws IOException {
     try (BufferedWriter writer = BufferedHelper.getWriter(file)) {
       TxtQueryHelper.writeDelimiter(writer);
-      TxtQueryHelper.writeField(writer, robot.getUuid());
+      TxtQueryHelper.writeField(writer, "UUID: " + robot.getUuid());
       Coord coord = robot.getCoord();
-      TxtQueryHelper.writeField(writer, coord.getRow() + " " + coord.getCol());
-      TxtQueryHelper.writeField(writer, String.valueOf(robot.getBattery()));
-      TxtQueryHelper.writeField(writer, robot.getState().getLabel());
+      TxtQueryHelper.writeField(writer, "Posicion: " + coord.getRow() + "," + coord.getCol());
+      TxtQueryHelper.writeField(writer, "Bateria: " + robot.getBattery() * 5 + "%");
+      TxtQueryHelper.writeField(writer, "Estado: " + robot.getState().getLabel());
       TxtQueryHelper.writeDelimiter(writer);
     }
   }

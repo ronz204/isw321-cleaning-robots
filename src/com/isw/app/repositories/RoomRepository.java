@@ -14,7 +14,9 @@ public class RoomRepository {
   public void save(Room room) throws IOException {
     try (BufferedWriter writer = BufferedHelper.getWriter(file)) {
       TxtQueryHelper.writeDelimiter(writer);
-      TxtQueryHelper.writeField(writer, room.getUuid());
+      TxtQueryHelper.writeField(writer, "UUID: " + room.getUuid());
+      TxtQueryHelper.writeField(writer, "Dimensiones: " + room.getRows() + "x" + room.getCols());
+      TxtQueryHelper.writeField(writer, "Sectores:");
       writeSectorsData(writer, room);
       TxtQueryHelper.writeDelimiter(writer);
     }
@@ -25,7 +27,7 @@ public class RoomRepository {
 
     for (int row = 0; row < room.getRows(); row++) {
       String sectorRow = buildSectorRow(sectors[row], room.getCols());
-      TxtQueryHelper.writeField(writer, sectorRow);
+      TxtQueryHelper.writeField(writer, "  Fila " + row + ": " + sectorRow);
     }
   }
 
