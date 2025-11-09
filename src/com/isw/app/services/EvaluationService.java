@@ -50,13 +50,13 @@ public class EvaluationService {
   private double calculateRobotInteractionScore(Robot robot, Coord targetCoord, List<Robot> allRobots, Room room) {
     double score = 0;
 
-    if (robot.justRecharged()) {
+    if (robot.justRecharged() && room.getSectorAt(robot.getCoord()).getType() == SectorType.RECHARGE) {
       Coord nearestRecharge = room.getRechargeCoords().stream()
           .min(Comparator.comparing(targetCoord::distanceTo))
           .orElse(null);
       
       if (nearestRecharge != null) {
-        score += targetCoord.distanceTo(nearestRecharge) * 200;
+        score += targetCoord.distanceTo(nearestRecharge) * 500;
       }
     }
 
