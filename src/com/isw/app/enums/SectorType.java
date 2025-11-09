@@ -39,7 +39,12 @@ public enum SectorType {
   }
 
   public static SectorType getRandomType() {
-    int value = RandomHelper.getRandomInt(1, 100);
+    int totalWeight = 0;
+    for (SectorType type : SectorType.values()) {
+      totalWeight += type.getWeight();
+    }
+    
+    int value = RandomHelper.getRandomInt(1, totalWeight);
     int cumulative = 0;
 
     for (SectorType type : SectorType.values()) {
