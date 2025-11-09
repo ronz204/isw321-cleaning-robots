@@ -7,7 +7,6 @@ import java.awt.Dimension;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
-import javax.swing.JOptionPane;
 import com.isw.app.models.Room;
 import com.isw.app.models.Robot;
 import com.isw.app.models.Cleaning;
@@ -94,11 +93,13 @@ public class SimulatorView extends BaseView {
     rightPanel.add(reportPanel, BorderLayout.CENTER);
   }
 
+  // TO-DO: Add New Simulation Service
   private void onGenerateBoard() {
     Room room = cleaningService.generateRoom();
     if (room != null) {
       cleaning = new Cleaning(room, null);
       boardRoom.onUpdateRoom(room);
+      updateReportPanel();
     }
   }
 
@@ -110,6 +111,7 @@ public class SimulatorView extends BaseView {
     List<Robot> robots = cleaningService.generateRobots(cleaning.getRoom());
     cleaning = new Cleaning(cleaning.getRoom(), robots);
     boardRoom.onUpdateRobots(robots);
+    updateReportPanel();
   }
 
   private void onStartSimulation() {
@@ -126,46 +128,23 @@ public class SimulatorView extends BaseView {
 
   private void startSimulation() {
     cleaningService.startCleaning(cleaning);
+    updateReportPanel();
 
     simulationTimer = new Timer(500, e -> {
       StepResult result = cleaningService.executeStep(cleaning);
 
       if (result != null) {
         boardRoom.onUpdateRobots(result.getRobots());
+        updateReportPanel();
 
         if (result.isComplete()) {
           stopSimulation();
-          showSimulationResults();
+          updateReportPanel();
         }
       }
     });
 
     simulationTimer.start();
-  }
-
-  private void showSimulationResults() {
-    List<Robot> robots = cleaning.getRobots();
-    Room room = cleaning.getRoom();
-
-    int cleanSectors = room.getSectorCounter().getOrDefault(com.isw.app.enums.SectorType.CLEAN, 0);
-
-    String message = String.format(
-        "🤖 SIMULACIÓN COMPLETADA 🤖\n\n" +
-            "📊 Estadísticas:\n" +
-            "═══════════════════════════\n" +
-            "🤖 Robots totales: %d\n" +
-            "🟢 Robots activos: %d\n" +
-            "🧽 Sectores limpiados: %d/%d\n" +
-            "⏱️ Total de pasos: %d\n" +
-            "✨ Progreso total: %.1f%%",
-        robots.size(),
-        (int) robots.stream().filter(r -> r.getBattery() > 0).count(),
-        cleanSectors,
-        room.getTotalSectors(),
-        cleaning.getTotalSteps(),
-        cleaning.getCompletionPercentage());
-
-    JOptionPane.showMessageDialog(frame, message, "Resultados de la Simulación", JOptionPane.INFORMATION_MESSAGE);
   }
 
   private void stopSimulation() {
@@ -174,6 +153,21 @@ public class SimulatorView extends BaseView {
     }
     if (cleaning != null) {
       cleaningService.stopCleaning(cleaning);
+      updateReportPanel();
     }
+  }
+
+  private void updateReportPanel() {
+    if (cleaning == null) {
+      reportPanel.resetReport();
+      return;
+    }
+
+    int totalDirty = cleaning.getInitialDirtySectors();
+    int cleaned = cleaningService.getCleanedSectors(cleaning);
+    double percentage = cleaningService.getCleaningPercentage(cleaning);
+    String status = cleaningService.getMissionStatus(cleaning);
+
+    reportPanel.updateReport(totalDirty, cleaned, percentage, status);
   }
 }

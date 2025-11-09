@@ -178,4 +178,42 @@ public class CleaningService {
     cleaning.setActive(false);
     updateRobotStatesOnEnd(cleaning.getRobots());
   }
+
+  // TO-DO: Other Service Methods for Reporting and Statistics
+  public int getTotalDirtySectors(Cleaning cleaning) {
+    if (cleaning == null || cleaning.getRoom() == null) return 0;
+    return cleaning.getRoom().getSectorCounter().getOrDefault(SectorType.DIRTY, 0);
+  }
+
+  public int getCleanedSectors(Cleaning cleaning) {
+    if (cleaning == null) return 0;
+    return cleaning.getSectorsCleanedTotal();
+  }
+
+  public double getCleaningPercentage(Cleaning cleaning) {
+    if (cleaning == null || cleaning.getRoom() == null) return 0.0;
+    return cleaning.getCompletionPercentage();
+  }
+
+  public String getMissionStatus(Cleaning cleaning) {
+    if (cleaning == null) return "Pendiente";
+    
+    if (cleaning.isActive()) {
+      return "En Progreso";
+    }
+    
+    if (cleaning.getTotalSteps() > 0) {
+      double percentage = getCleaningPercentage(cleaning);
+      if (percentage >= 100.0) return "Completada";
+      if (percentage >= 80.0) return "Aceptable";
+      return "Fallida";
+    }
+    
+    return "Pendiente";
+  }
+
+  public int getInitialDirtySectors(Room room) {
+    if (room == null) return 0;
+    return room.getSectorCounter().getOrDefault(SectorType.DIRTY, 0);
+  }
 }
