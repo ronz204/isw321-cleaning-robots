@@ -15,6 +15,7 @@ import com.isw.app.models.StepResult;
 import com.isw.app.services.CleaningService;
 import com.isw.app.presentation.components.BoardRoom;
 import com.isw.app.presentation.components.ControlPanel;
+import com.isw.app.presentation.components.ReportPanel;
 
 public class SimulatorView extends BaseView {
   private final CleaningService cleaningService = new CleaningService();
@@ -29,6 +30,7 @@ public class SimulatorView extends BaseView {
 
   private BoardRoom boardRoom;
   private ControlPanel controlPanel;
+  private ReportPanel reportPanel;
 
   public SimulatorView() {
     super(SimulatorView.class.getName());
@@ -41,6 +43,7 @@ public class SimulatorView extends BaseView {
     buildRightPanel();
     buildBoardRoom();
     buildControlPanel();
+    buildReportPanel();
     frame.setVisible(true);
   }
 
@@ -84,6 +87,11 @@ public class SimulatorView extends BaseView {
     controlPanel.setOnPlaced(this::onPlaceRobots);
     controlPanel.setOnSimulate(this::onStartSimulation);
     leftPanel.add(controlPanel, BorderLayout.CENTER);
+  }
+
+  private void buildReportPanel() {
+    reportPanel = new ReportPanel();
+    rightPanel.add(reportPanel, BorderLayout.CENTER);
   }
 
   private void onGenerateBoard() {
