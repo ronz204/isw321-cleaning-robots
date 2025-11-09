@@ -4,6 +4,8 @@ import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.stream.IntStream;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import com.isw.app.enums.SectorType;
 import com.isw.app.helpers.RandomHelper;
@@ -11,18 +13,19 @@ import com.isw.app.helpers.IdentifierHelper;
 
 public class Room {
   private final String PREFIX = "ROO";
+  private static final int MAX_RECHARGE = 4;
 
-  private int ROWS = RandomHelper.getRandomInt(3, 10);
-  private int COLS = RandomHelper.getRandomInt(3, 10);
+  private final int ROWS = RandomHelper.getRandomInt(3, 10);
+  private final int COLS = RandomHelper.getRandomInt(3, 10);
 
   private String uuid;
   private Sector[][] sectors = new Sector[ROWS][COLS];
   private Map<SectorType, Integer> counter = new HashMap<>();
 
   public Room() {
+    this.uuid = IdentifierHelper.generate(PREFIX);
     setupSectorCounter();
     setupSectorBoard();
-    this.uuid = IdentifierHelper.generate(PREFIX);
   }
 
   public int getRows() {
@@ -60,21 +63,23 @@ public class Room {
   }
 
   private void setupSectorBoard() {
-    final int MAX_RECHARGE = 4;
-
     for (int row = 0; row < ROWS; row++) {
       for (int col = 0; col < COLS; col++) {
-        SectorType type = SectorType.getRandomType();
-
-        // Si se genera RECHARGE pero ya hay 4, cambiar a CLEAN
-        if (type == SectorType.RECHARGE && counter.get(SectorType.RECHARGE) >= MAX_RECHARGE) {
-          type = SectorType.CLEAN;
-        }
-
+        SectorType type = determineValidSectorType();
         sectors[row][col] = new Sector(new Coord(row, col), type);
-        counter.put(type, counter.get(type) + 1);
+        counter.merge(type, 1, Integer::sum);
       }
     }
+  }
+
+  private SectorType determineValidSectorType() {
+    SectorType type = SectorType.getRandomType();
+    
+    if (type == SectorType.RECHARGE && counter.getOrDefault(SectorType.RECHARGE, 0) >= MAX_RECHARGE) {
+      return SectorType.CLEAN;
+    }
+    
+    return type;
   }
 
   public boolean isValidCoord(Coord coord) {
@@ -82,13 +87,11 @@ public class Room {
   }
 
   public List<Coord> getAllCoords() {
-    List<Coord> coords = new ArrayList<>();
-    for (int row = 0; row < ROWS; row++) {
-      for (int col = 0; col < COLS; col++) {
-        coords.add(new Coord(row, col));
-      }
-    }
-    return coords;
+    return IntStream.range(0, ROWS)
+        .boxed()
+        .flatMap(row -> IntStream.range(0, COLS)
+            .mapToObj(col -> new Coord(row, col)))
+        .collect(Collectors.toList());
   }
 
   public List<Coord> getCoordsByType(SectorType type) {
@@ -107,15 +110,14 @@ public class Room {
   }
 
   public boolean hasDirtySectorsNearby(Coord center, int radius) {
-    for (int row = Math.max(0, center.getRow() - radius); row <= Math.min(ROWS - 1, center.getRow() + radius); row++) {
-      for (int col = Math.max(0, center.getCol() - radius); col <= Math.min(COLS - 1,
-          center.getCol() + radius); col++) {
-        if (getSectorAt(new Coord(row, col)).getType() == SectorType.DIRTY) {
-          return true;
-        }
-      }
-    }
-    return false;
+    int minRow = Math.max(0, center.getRow() - radius);
+    int maxRow = Math.min(ROWS - 1, center.getRow() + radius);
+    int minCol = Math.max(0, center.getCol() - radius);
+    int maxCol = Math.min(COLS - 1, center.getCol() + radius);
+
+    return IntStream.rangeClosed(minRow, maxRow)
+        .anyMatch(row -> IntStream.rangeClosed(minCol, maxCol)
+            .anyMatch(col -> getSectorAt(new Coord(row, col)).getType() == SectorType.DIRTY));
   }
 
   public void setSectorOccupied(Coord coord, boolean occupied) {
@@ -127,7 +129,7 @@ public class Room {
   }
 
   public void incrementSectorCount(SectorType type) {
-    counter.put(type, counter.getOrDefault(type, 0) + 1);
+    counter.merge(type, 1, Integer::sum);
   }
 
   public List<Coord> getRechargeCoords() {
@@ -139,5 +141,35 @@ public class Room {
         .mapToInt(coord::distanceTo)
         .min()
         .orElse(Integer.MAX_VALUE);
+  }
+
+  public void startTemporaryTimers() {
+    forEachSector(sector -> {
+      if (sector.getType() == SectorType.TEMPORARY) {
+        sector.startTemporaryTimer();
+      }
+    });
+  }
+
+  public List<Coord> updateTemporaryTimers() {
+    List<Coord> changedSectors = new ArrayList<>();
+
+    forEachSector(sector -> {
+      if (sector.updateTemporaryTimer()) {
+        changedSectors.add(sector.getCoord());
+        decrementSectorCount(SectorType.TEMPORARY);
+        incrementSectorCount(SectorType.CLEAN);
+      }
+    });
+
+    return changedSectors;
+  }
+
+  private void forEachSector(Consumer<Sector> action) {
+    for (int row = 0; row < ROWS; row++) {
+      for (int col = 0; col < COLS; col++) {
+        action.accept(sectors[row][col]);
+      }
+    }
   }
 }
