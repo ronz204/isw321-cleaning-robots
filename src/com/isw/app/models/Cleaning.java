@@ -1,6 +1,7 @@
 package com.isw.app.models;
 
 import java.util.List;
+import com.isw.app.enums.SectorType;
 import com.isw.app.helpers.IdentifierHelper;
 
 public class Cleaning {
@@ -13,6 +14,7 @@ public class Cleaning {
 
   private int totalSteps;
   private int sectorsCleanedTotal;
+  private int initialDirtySectors;
 
   public Cleaning(Room room, List<Robot> robots) {
     this.uuid = IdentifierHelper.generate(PREFIX);
@@ -22,6 +24,9 @@ public class Cleaning {
 
     this.totalSteps = 0;
     this.sectorsCleanedTotal = 0;
+    this.initialDirtySectors = room != null
+        ? room.getSectorCounter().getOrDefault(SectorType.DIRTY, 0)
+        : 0;
   }
 
   public String getUuid() {
@@ -48,6 +53,10 @@ public class Cleaning {
     return sectorsCleanedTotal;
   }
 
+  public int getInitialDirtySectors() {
+    return initialDirtySectors;
+  }
+
   public void setActive(boolean active) {
     this.isActive = active;
   }
@@ -65,7 +74,7 @@ public class Cleaning {
   }
 
   public double getCompletionPercentage() {
-    int totalSectors = room.getTotalSectors();
-    return totalSectors > 0 ? ((double) sectorsCleanedTotal / totalSectors) * 100 : 0;
+    if (initialDirtySectors == 0) return 100.0;
+    return ((double) sectorsCleanedTotal / initialDirtySectors) * 100.0;
   }
 }
