@@ -8,7 +8,9 @@ import java.awt.GridLayout;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import javax.swing.SwingConstants;
+import com.isw.app.models.Cleaning;
 import javax.swing.border.EmptyBorder;
+import com.isw.app.services.CleaningService;
 
 public class ReportPanel extends JPanel {
 
@@ -147,6 +149,27 @@ public class ReportPanel extends JPanel {
     updateStatusColor(status);
   }
 
+  public void updateReport(int totalDirty, int cleaned, double percentage, String status) {
+    setTotalDirtySectors(totalDirty);
+    setCleanedSectors(cleaned);
+    setCleaningPercentage(percentage);
+    setMissionStatus(status);
+  }
+
+  public void updateFromCleaning(Cleaning cleaning, CleaningService service) {
+    if (cleaning == null || service == null) {
+      resetReport();
+      return;
+    }
+
+    int totalDirty = cleaning.getInitialDirtySectors();
+    int cleaned = service.getCleanedSectors(cleaning);
+    double percentage = service.getCleaningPercentage(cleaning);
+    String status = service.getMissionStatus(cleaning);
+
+    updateReport(totalDirty, cleaned, percentage, status);
+  }
+
   private void updatePercentageColor(double percentage) {
     if (percentage >= 80.0) {
       cleaningPercentageValue.setForeground(Color.GREEN);
@@ -167,6 +190,9 @@ public class ReportPanel extends JPanel {
         break;
       case "fallida":
         missionStatusValue.setForeground(Color.RED);
+        break;
+      case "en progreso":
+        missionStatusValue.setForeground(Color.BLUE);
         break;
       default:
         missionStatusValue.setForeground(Color.GRAY);
