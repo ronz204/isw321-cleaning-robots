@@ -62,8 +62,52 @@ public class MovementService {
       return new Decision(robot, null);
     }
 
+    // Verificar si vale la pena esperar por un obstáculo temporal
+    if (shouldWaitForTemporary(robot, room, robotObjectives)) {
+      return new Decision(robot, null); // Esperar
+    }
+
     Movement bestMove = findBestMove(robot, adjacentCoords, allRobots, room, reservedCoords, robotObjectives);
     return new Decision(robot, bestMove);
+  }
+
+  private boolean shouldWaitForTemporary(Robot robot, Room room, Map<Robot, Coord> robotObjectives) {
+    Coord objective = robotObjectives.get(robot);
+    if (objective == null) return false;
+
+    // Camino sin considerar temporales
+    List<Coord> pathIgnoringTemp = pathfindingService.findShortestPath(
+        robot.getCoord(), objective, room, true);
+    
+    // Camino actual (sin temporales)
+    List<Coord> currentPath = pathfindingService.findShortestPath(
+        robot.getCoord(), objective, room, false);
+
+    // Si no hay camino ignorando temporales, no esperar
+    if (pathIgnoringTemp == null) return false;
+
+    // Si hay camino actual y es similar o mejor, no esperar
+    if (currentPath != null && currentPath.size() <= pathIgnoringTemp.size() + 2) {
+      return false;
+    }
+
+    // Si el camino con temporales es significativamente más corto
+    if (pathIgnoringTemp.size() < (currentPath != null ? currentPath.size() : Integer.MAX_VALUE)) {
+      // Verificar que hay temporales en el camino
+      boolean hasTemporary = pathfindingService.hasTemporaryInPath(
+          robot.getCoord(), objective, room);
+      
+      if (hasTemporary) {
+        // Obtener el tiempo máximo de espera
+        int maxWaitTime = pathfindingService.getMaxTemporaryTimeInPath(
+            robot.getCoord(), objective, room);
+        
+        // Solo esperar si el tiempo es razonable (< 5 segundos)
+        return maxWaitTime > 0 && maxWaitTime <= 5;
+      }
+    }
+
+    return false;
   }
 
   private List<Coord> getValidAdjacentCoords(Coord current, Room room) {

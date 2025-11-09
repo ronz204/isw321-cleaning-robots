@@ -41,8 +41,7 @@ public class AssignmentService {
     List<Coord> availableTargets = new ArrayList<>(targets);
 
     for (Robot robot : robots) {
-      if (availableTargets.isEmpty())
-        break;
+      if (availableTargets.isEmpty()) break;
 
       Coord bestTarget = findBestTargetForRobot(robot, availableTargets, room);
       if (bestTarget != null) {
@@ -55,69 +54,45 @@ public class AssignmentService {
   }
 
   private Map<Robot, Coord> assignOptimizedObjectives(List<Robot> robots, List<Coord> targets, Room room) {
-    if (targets.isEmpty())
-      return new HashMap<>();
+    if (targets.isEmpty()) return new HashMap<>();
 
-    Map<Robot, Map<Coord, Integer>> robotDistances = calculateAllDistances(robots, targets, room);
-    List<TargetPair> optimalPairs = findOptimalAssignments(robotDistances, targets);
-
-    return optimalPairs.stream()
-        .limit(Math.min(targets.size(), robots.size()))
-        .collect(Collectors.toMap(
-            TargetPair::getRobot,
-            TargetPair::getTarget,
-            (existing, replacement) -> existing
-        ));
-  }
-
-  private Map<Robot, Map<Coord, Integer>> calculateAllDistances(List<Robot> robots, List<Coord> targets, Room room) {
-    return robots.stream()
-        .collect(Collectors.toMap(
-            robot -> robot,
-            robot -> targets.stream()
-                .collect(Collectors.toMap(
-                    target -> target,
-                    target -> {
-                      List<Coord> path = pathfindingService.findShortestPath(robot.getCoord(), target, room);
-                      return path != null ? path.size() : Integer.MAX_VALUE;
-                    }))));
-  }
-
-  private List<TargetPair> findOptimalAssignments(Map<Robot, Map<Coord, Integer>> robotDistances, List<Coord> targets) {
-    List<TargetPair> allPairs = robotDistances.entrySet().stream()
-        .flatMap(robotEntry -> robotEntry.getValue().entrySet().stream()
-            .filter(distanceEntry -> distanceEntry.getValue() != Integer.MAX_VALUE)
-            .map(distanceEntry -> new TargetPair(
-                robotEntry.getKey(),
-                distanceEntry.getKey(),
-                distanceEntry.getValue())))
+    List<TargetPair> allPairs = robots.stream()
+        .flatMap(robot -> targets.stream()
+            .map(target -> createTargetPair(robot, target, room))
+            .filter(pair -> pair.getDistance() != Integer.MAX_VALUE))
         .sorted(Comparator.comparing(TargetPair::getDistance))
         .collect(Collectors.toList());
 
-    List<TargetPair> selectedPairs = new ArrayList<>();
+    return selectOptimalPairs(allPairs, targets.size());
+  }
+
+  private TargetPair createTargetPair(Robot robot, Coord target, Room room) {
+    List<Coord> path = pathfindingService.findShortestPath(robot.getCoord(), target, room);
+    int distance = path != null ? path.size() : Integer.MAX_VALUE;
+    return new TargetPair(robot, target, distance);
+  }
+
+  private Map<Robot, Coord> selectOptimalPairs(List<TargetPair> allPairs, int maxTargets) {
+    Map<Robot, Coord> assignments = new HashMap<>();
     List<Robot> assignedRobots = new ArrayList<>();
     List<Coord> assignedTargets = new ArrayList<>();
 
     for (TargetPair pair : allPairs) {
       if (!assignedRobots.contains(pair.getRobot()) && !assignedTargets.contains(pair.getTarget())) {
-        selectedPairs.add(pair);
+        assignments.put(pair.getRobot(), pair.getTarget());
         assignedRobots.add(pair.getRobot());
         assignedTargets.add(pair.getTarget());
 
-        if (assignedTargets.size() >= targets.size())
-          break;
+        if (assignedTargets.size() >= maxTargets) break;
       }
     }
 
-    return selectedPairs;
+    return assignments;
   }
 
   private Coord findBestTargetForRobot(Robot robot, List<Coord> availableTargets, Room room) {
     return availableTargets.stream()
-        .map(target -> {
-          List<Coord> path = pathfindingService.findShortestPath(robot.getCoord(), target, room);
-          return new TargetPair(robot, target, path != null ? path.size() : Integer.MAX_VALUE);
-        })
+        .map(target -> createTargetPair(robot, target, room))
         .filter(pair -> pair.getDistance() != Integer.MAX_VALUE)
         .min(Comparator.comparing(TargetPair::getDistance))
         .map(TargetPair::getTarget)

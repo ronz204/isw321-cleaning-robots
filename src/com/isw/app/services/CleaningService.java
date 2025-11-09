@@ -72,26 +72,18 @@ public class CleaningService {
     }
   }
 
-  public Cleaning generateCleaning() {
-    Room room = generateRoom();
-    if (room == null) return null;
-    
-    List<Robot> robots = generateRobots(room);
-    return new Cleaning(room, robots);
-  }
-
-  // Método central que maneja todo un paso de simulación
   public StepResult executeStep(Cleaning cleaning) {
     if (!cleaning.isValid()) return null;
+
+    cleaning.getRoom().updateTemporaryTimers();
 
     List<Decision> decisions = movementService.calculateMovements(cleaning.getRobots(), cleaning.getRoom());
     List<Robot> processedRobots = processRobotDecisions(decisions, cleaning.getRoom());
     
     int sectorsCleanedThisStep = (int) processedRobots.stream()
-        .mapToLong(robot -> robot.getState() == RobotState.CLEANING ? 1 : 0)
-        .sum();
+        .filter(robot -> robot.getState() == RobotState.CLEANING)
+        .count();
 
-    // Actualizar estado de cleaning
     cleaning.incrementSteps();
     cleaning.addCleanedSectors(sectorsCleanedThisStep);
 
@@ -105,14 +97,12 @@ public class CleaningService {
                          cleaning.getTotalSteps(), isComplete);
   }
 
-  // Procesa todas las decisiones de robots en un solo método
   private List<Robot> processRobotDecisions(List<Decision> decisions, Room room) {
     return decisions.stream()
         .map(decision -> processRobotDecision(decision, room))
         .collect(Collectors.toList());
   }
 
-  // Procesa la decisión de un robot individual
   private Robot processRobotDecision(Decision decision, Room room) {
     Robot robot = decision.getRobot();
 
@@ -134,10 +124,19 @@ public class CleaningService {
       return robot;
     }
 
-    // Ejecutar movimiento
     moveRobot(robot, newCoord, room);
+    handleSectorAction(robot, targetSector, room);
 
-    // Manejar acciones en la nueva posición
+    return robot;
+  }
+
+  private void moveRobot(Robot robot, Coord newCoord, Room room) {
+    room.setSectorOccupied(robot.getCoord(), false);
+    robot.setCoord(newCoord);
+    room.setSectorOccupied(newCoord, true);
+  }
+
+  private void handleSectorAction(Robot robot, Sector targetSector, Room room) {
     if (targetSector.getType() == SectorType.RECHARGE) {
       robot.rechargeBattery();
       robot.setState(RobotState.ACTIVE);
@@ -150,14 +149,6 @@ public class CleaningService {
       robot.setState(RobotState.ACTIVE);
       robot.consumeBattery(1);
     }
-
-    return robot;
-  }
-
-  private void moveRobot(Robot robot, Coord newCoord, Room room) {
-    room.setSectorOccupied(robot.getCoord(), false);
-    robot.setCoord(newCoord);
-    room.setSectorOccupied(newCoord, true);
   }
 
   private boolean isSimulationComplete(Room room, List<Robot> robots) {
@@ -172,6 +163,9 @@ public class CleaningService {
 
   public void startCleaning(Cleaning cleaning) {
     cleaning.setActive(true);
+    if (cleaning.getRoom() != null) {
+      cleaning.getRoom().startTemporaryTimers();
+    }
   }
 
   public void stopCleaning(Cleaning cleaning) {
@@ -179,28 +173,18 @@ public class CleaningService {
     updateRobotStatesOnEnd(cleaning.getRobots());
   }
 
-  // TO-DO: Other Service Methods for Reporting and Statistics
-  public int getTotalDirtySectors(Cleaning cleaning) {
-    if (cleaning == null || cleaning.getRoom() == null) return 0;
-    return cleaning.getRoom().getSectorCounter().getOrDefault(SectorType.DIRTY, 0);
-  }
-
   public int getCleanedSectors(Cleaning cleaning) {
-    if (cleaning == null) return 0;
-    return cleaning.getSectorsCleanedTotal();
+    return cleaning != null ? cleaning.getSectorsCleanedTotal() : 0;
   }
 
   public double getCleaningPercentage(Cleaning cleaning) {
-    if (cleaning == null || cleaning.getRoom() == null) return 0.0;
-    return cleaning.getCompletionPercentage();
+    return cleaning != null && cleaning.getRoom() != null ? cleaning.getCompletionPercentage() : 0.0;
   }
 
   public String getMissionStatus(Cleaning cleaning) {
     if (cleaning == null) return "Pendiente";
     
-    if (cleaning.isActive()) {
-      return "En Progreso";
-    }
+    if (cleaning.isActive()) return "En Progreso";
     
     if (cleaning.getTotalSteps() > 0) {
       double percentage = getCleaningPercentage(cleaning);
@@ -210,10 +194,5 @@ public class CleaningService {
     }
     
     return "Pendiente";
-  }
-
-  public int getInitialDirtySectors(Room room) {
-    if (room == null) return 0;
-    return room.getSectorCounter().getOrDefault(SectorType.DIRTY, 0);
   }
 }

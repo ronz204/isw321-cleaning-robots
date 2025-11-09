@@ -10,15 +10,16 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import com.isw.app.models.Room;
 import com.isw.app.models.Coord;
-import com.isw.app.models.Sector;
 import com.isw.app.enums.SectorType;
 
 public class PathfindingService {
 
   public List<Coord> findShortestPath(Coord start, Coord goal, Room room) {
-    if (start.equals(goal)) {
-      return new ArrayList<>();
-    }
+    return findShortestPath(start, goal, room, false);
+  }
+
+  public List<Coord> findShortestPath(Coord start, Coord goal, Room room, boolean ignoreTemporary) {
+    if (start.equals(goal)) return new ArrayList<>();
 
     Queue<Coord> queue = new LinkedList<>();
     Map<Coord, Coord> parent = new HashMap<>();
@@ -36,7 +37,7 @@ public class PathfindingService {
       }
 
       for (Coord neighbor : getAdjacentCoords(current, room)) {
-        if (!visited.contains(neighbor) && isNavigable(neighbor, room)) {
+        if (!visited.contains(neighbor) && isNavigable(neighbor, room, ignoreTemporary)) {
           visited.add(neighbor);
           parent.put(neighbor, current);
           queue.offer(neighbor);
@@ -44,23 +45,36 @@ public class PathfindingService {
       }
     }
 
-    return null; // No path found
+    return null;
   }
 
-  public List<Coord> findClosestTargets(Coord start, List<Coord> targets, Room room) {
-    List<Coord> reachableTargets = new ArrayList<>();
-
-    for (Coord target : targets) {
-      List<Coord> path = findShortestPath(start, target, room);
-      if (path != null) {
-        reachableTargets.add(target);
-      }
+  private boolean isNavigable(Coord coord, Room room, boolean ignoreTemporary) {
+    SectorType type = room.getSectorAt(coord).getType();
+    
+    if (ignoreTemporary && type == SectorType.TEMPORARY) {
+      return true;
     }
+    
+    return type == SectorType.CLEAN || type == SectorType.DIRTY || type == SectorType.RECHARGE;
+  }
 
-    // Sort by distance
-    reachableTargets.sort((a, b) -> Integer.compare(start.distanceTo(a), start.distanceTo(b)));
+  public boolean hasTemporaryInPath(Coord start, Coord goal, Room room) {
+    List<Coord> path = findShortestPath(start, goal, room, true);
+    if (path == null) return false;
+    
+    return path.stream()
+        .anyMatch(coord -> room.getSectorAt(coord).getType() == SectorType.TEMPORARY);
+  }
 
-    return reachableTargets;
+  public int getMaxTemporaryTimeInPath(Coord start, Coord goal, Room room) {
+    List<Coord> path = findShortestPath(start, goal, room, true);
+    if (path == null) return 0;
+    
+    return path.stream()
+        .filter(coord -> room.getSectorAt(coord).getType() == SectorType.TEMPORARY)
+        .mapToInt(coord -> room.getSectorAt(coord).getRemainingTime())
+        .max()
+        .orElse(0);
   }
 
   private List<Coord> getAdjacentCoords(Coord current, Room room) {
@@ -75,13 +89,6 @@ public class PathfindingService {
     }
 
     return adjacent;
-  }
-
-  private boolean isNavigable(Coord coord, Room room) {
-    Sector sector = room.getSectorAt(coord);
-    return sector.getType() == SectorType.CLEAN ||
-        sector.getType() == SectorType.DIRTY ||
-        sector.getType() == SectorType.RECHARGE;
   }
 
   private List<Coord> reconstructPath(Map<Coord, Coord> parent, Coord goal) {

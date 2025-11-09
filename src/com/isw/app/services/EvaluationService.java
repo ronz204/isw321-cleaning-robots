@@ -2,7 +2,7 @@ package com.isw.app.services;
 
 import java.util.Map;
 import java.util.List;
-import java.util.HashMap;
+import java.util.Comparator;
 import com.isw.app.models.Room;
 import com.isw.app.models.Robot;
 import com.isw.app.models.Coord;
@@ -16,18 +16,12 @@ public class EvaluationService {
     this.pathfindingService = pathfindingService;
   }
 
-  public double calculateMoveScore(Robot robot, Coord targetCoord, List<Robot> allRobots, Room room) {
-    return calculateMoveScore(robot, targetCoord, allRobots, room, new HashMap<>());
-  }
-
   public double calculateMoveScore(Robot robot, Coord targetCoord, List<Robot> allRobots,
       Room room, Map<Robot, Coord> robotObjectives) {
     Sector targetSector = room.getSectorAt(targetCoord);
 
-    if (targetSector.getType() == SectorType.DIRTY)
-      return 5000;
-    if (targetSector.getType() == SectorType.RECHARGE && robot.needsRecharge())
-      return 10000;
+    if (targetSector.getType() == SectorType.DIRTY) return 5000;
+    if (targetSector.getType() == SectorType.RECHARGE && robot.needsRecharge()) return 10000;
 
     return calculatePathScore(targetCoord, room, robot, robotObjectives) +
         calculateRobotInteractionScore(robot, targetCoord, allRobots, room);
@@ -42,8 +36,7 @@ public class EvaluationService {
     }
 
     List<Coord> dirtySectors = room.getCoordsByType(SectorType.DIRTY);
-    if (dirtySectors.isEmpty())
-      return 0;
+    if (dirtySectors.isEmpty()) return 0;
 
     return dirtySectors.stream()
         .mapToDouble(dirty -> {
@@ -58,9 +51,11 @@ public class EvaluationService {
     double score = 0;
 
     if (robot.justRecharged()) {
-      List<Coord> rechargeStations = room.getRechargeCoords();
-      if (!rechargeStations.isEmpty()) {
-        Coord nearestRecharge = findNearestCoord(targetCoord, rechargeStations);
+      Coord nearestRecharge = room.getRechargeCoords().stream()
+          .min(Comparator.comparing(targetCoord::distanceTo))
+          .orElse(null);
+      
+      if (nearestRecharge != null) {
         score += targetCoord.distanceTo(nearestRecharge) * 200;
       }
     }
@@ -68,14 +63,7 @@ public class EvaluationService {
     long nearbyRobots = allRobots.stream()
         .filter(r -> targetCoord.distanceTo(r.getCoord()) <= 1)
         .count();
-    score -= nearbyRobots * 300;
-
-    return score;
-  }
-
-  private Coord findNearestCoord(Coord target, List<Coord> coords) {
-    return coords.stream()
-        .min((c1, c2) -> Integer.compare(target.distanceTo(c1), target.distanceTo(c2)))
-        .orElse(null);
+    
+    return score - (nearbyRobots * 300);
   }
 }
