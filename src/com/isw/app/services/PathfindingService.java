@@ -56,6 +56,40 @@ public class PathfindingService {
     return null;
   }
 
+  public List<Coord> findShortestPathAvoidingRobots(Coord start, Coord goal, Room room,
+      boolean allowRechargeTraversal) {
+    if (start.equals(goal))
+      return new ArrayList<>();
+
+    Queue<Coord> queue = new LinkedList<>();
+    Map<Coord, Coord> parent = new HashMap<>();
+    Set<Coord> visited = new HashSet<>();
+
+    queue.offer(start);
+    visited.add(start);
+    parent.put(start, null);
+
+    while (!queue.isEmpty()) {
+      Coord current = queue.poll();
+
+      if (current.equals(goal)) {
+        return reconstructPath(parent, goal);
+      }
+
+      for (Coord neighbor : coordinateService.getAdjacentCoords(current, room)) {
+        if (!visited.contains(neighbor) &&
+            navigationService.canNavigate(neighbor, goal, room, allowRechargeTraversal) &&
+            room.getSectorAt(neighbor).isEmpty()) {
+          visited.add(neighbor);
+          parent.put(neighbor, current);
+          queue.offer(neighbor);
+        }
+      }
+    }
+
+    return null;
+  }
+
   public List<Coord> getValidAdjacentCoords(Coord current, Room room) {
     return navigationService.getValidAdjacentCoords(current, room);
   }

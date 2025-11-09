@@ -56,22 +56,18 @@ public class MovementService {
       return new Decision(robot, null);
     }
 
-    // Verificar si el objetivo es una estación de recarga ocupada - ESPERAR
     if (isOccupiedRecharge(assignedTarget, room)) {
       return new Decision(robot, null);
     }
 
-    // Primero calcular el siguiente movimiento
     Coord nextMove = findNextMove(robot, assignedTarget, room, reservedCoords);
-    
-    // Si no hay movimiento válido, quedarse quieto
+
     if (nextMove == null) {
       return new Decision(robot, null);
     }
 
-    // ANTES de moverse, verificar si el siguiente paso es hacia una recarga ocupada
     if (isOccupiedRecharge(nextMove, room)) {
-      return new Decision(robot, null); // Quedarse quieto y esperar
+      return new Decision(robot, null);
     }
 
     return new Decision(robot, new Movement(nextMove, DEFAULT_SCORE));
@@ -98,7 +94,9 @@ public class MovementService {
 
   private Coord findNextMove(Robot robot, Coord target, Room room, List<Coord> reservedCoords) {
     boolean isGoingToDirty = room.getSectorAt(target).getType() == SectorType.DIRTY;
-    List<Coord> path = pathfindingService.findShortestPath(
+
+    // Calcular path excluyendo sectores ocupados por robots inactivos
+    List<Coord> path = pathfindingService.findShortestPathAvoidingRobots(
         robot.getCoord(), target, room, isGoingToDirty);
 
     if (path == null || path.isEmpty())
@@ -106,18 +104,26 @@ public class MovementService {
 
     Coord nextStep = path.get(0);
 
-    if (navigationService.isBlocked(nextStep, room, reservedCoords)) {
-      return findAlternativeMove(robot, target, room, reservedCoords, isGoingToDirty);
+    // Si el siguiente paso está bloqueado por reservas de este turno
+    if (reservedCoords.contains(nextStep)) {
+      return findAlternativeRoute(robot, target, room, reservedCoords, isGoingToDirty);
     }
 
     return nextStep;
   }
 
-  private Coord findAlternativeMove(Robot robot, Coord target, Room room,
+  private Coord findAlternativeRoute(Robot robot, Coord target, Room room,
       List<Coord> reservedCoords, boolean allowRechargeTraversal) {
-    return navigationService.getUnblockedAdjacentCoords(robot.getCoord(), room, reservedCoords).stream()
+    List<Coord> availableMoves = navigationService.getUnblockedAdjacentCoords(
+        robot.getCoord(), room, reservedCoords);
+
+    if (availableMoves.isEmpty()) {
+      return null;
+    }
+
+    return availableMoves.stream()
         .min(Comparator.comparingInt(coord -> {
-          List<Coord> pathFromCoord = pathfindingService.findShortestPath(
+          List<Coord> pathFromCoord = pathfindingService.findShortestPathAvoidingRobots(
               coord, target, room, allowRechargeTraversal);
           return pathFromCoord != null ? pathFromCoord.size() + 1 : Integer.MAX_VALUE;
         }))
