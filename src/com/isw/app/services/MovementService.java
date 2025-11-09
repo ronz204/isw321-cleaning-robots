@@ -13,7 +13,6 @@ import com.isw.app.models.Movement;
 import com.isw.app.enums.SectorType;
 
 public class MovementService {
-  private static final int WAIT_DISTANCE = 2;
   private static final double DEFAULT_SCORE = 1000.0;
   
   private final PathfindingService pathfindingService;
@@ -54,9 +53,9 @@ public class MovementService {
       return new Decision(robot, null);
     }
 
-    // Esperar si la estación de recarga está ocupada
-    if (shouldWaitForRecharge(robot, room, assignedTarget, currentPos)) {
-      return new Decision(robot, null);
+    // Si el objetivo es una recarga y está ocupada, ESPERAR en la posición actual
+    if (isRechargeOccupied(room, assignedTarget)) {
+      return new Decision(robot, null); // Esperar sin moverse
     }
 
     // Moverse hacia el objetivo
@@ -64,18 +63,16 @@ public class MovementService {
     return createMovementDecision(robot, nextMove);
   }
 
+  private boolean isRechargeOccupied(Room room, Coord target) {
+    return room.getSectorAt(target).getType() == SectorType.RECHARGE &&
+           !room.getSectorAt(target).isEmpty();
+  }
+
   private Decision createExitDecision(Robot robot, Room room, List<Coord> reservedCoords, 
                                       Map<Robot, Coord> assignments) {
     robot.clearRechargePosition();
     Coord exitMove = findExitFromRecharge(robot, room, reservedCoords, assignments);
     return createMovementDecision(robot, exitMove);
-  }
-
-  private boolean shouldWaitForRecharge(Robot robot, Room room, Coord target, Coord currentPos) {
-    return robot.needsRecharge() && 
-           room.getSectorAt(target).getType() == SectorType.RECHARGE &&
-           !room.getSectorAt(target).isEmpty() &&
-           currentPos.distanceTo(target) <= WAIT_DISTANCE;
   }
 
   private Decision createMovementDecision(Robot robot, Coord nextMove) {

@@ -43,33 +43,16 @@ public class AssignmentService {
     List<Coord> rechargeStations = room.getRechargeCoords();
     if (rechargeStations.isEmpty()) return;
     
-    Set<Coord> occupiedStations = robots.stream()
-        .map(Robot::getCoord)
-        .filter(coord -> room.getSectorAt(coord).getType() == SectorType.RECHARGE)
-        .collect(Collectors.toSet());
-    
     for (Robot robot : robots) {
-      if (occupiedStations.contains(robot.getCoord())) continue;
+      // Asignar SIEMPRE la estación más cercana, sin importar si está ocupada
+      Coord nearestRecharge = rechargeStations.stream()
+          .min(Comparator.comparing(r -> robot.getCoord().distanceTo(r)))
+          .orElse(null);
       
-      Coord bestRecharge = findBestRecharge(robot, rechargeStations, occupiedStations, assignments);
-      if (bestRecharge != null) {
-        assignments.put(robot, bestRecharge);
+      if (nearestRecharge != null) {
+        assignments.put(robot, nearestRecharge);
       }
     }
-  }
-
-  private Coord findBestRecharge(Robot robot, List<Coord> rechargeStations, 
-                                 Set<Coord> occupiedStations, Map<Robot, Coord> assignments) {
-    return rechargeStations.stream()
-        .filter(recharge -> !isStationOccupiedOrWaiting(recharge, occupiedStations, assignments))
-        .min(Comparator.comparing(r -> robot.getCoord().distanceTo(r)))
-        .orElse(null);
-  }
-
-  private boolean isStationOccupiedOrWaiting(Coord recharge, Set<Coord> occupiedStations, 
-                                             Map<Robot, Coord> assignments) {
-    return occupiedStations.contains(recharge) || 
-           assignments.containsValue(recharge);
   }
 
   private void assignDirtySectors(List<Robot> robots, Room room, Map<Robot, Coord> assignments) {
