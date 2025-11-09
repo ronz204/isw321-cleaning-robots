@@ -16,9 +16,11 @@ import com.isw.app.models.TargetPair;
 
 public class AssignmentService {
   private final PathfindingService pathfindingService;
+  private final CoordinateService coordinateService;
 
   public AssignmentService(PathfindingService pathfindingService) {
     this.pathfindingService = pathfindingService;
+    this.coordinateService = new CoordinateService();
   }
 
   public Map<Robot, Coord> assignObjectives(List<Robot> robots, Room room) {
@@ -44,11 +46,7 @@ public class AssignmentService {
     if (rechargeStations.isEmpty()) return;
     
     for (Robot robot : robots) {
-      // Asignar SIEMPRE la estación más cercana, sin importar si está ocupada
-      Coord nearestRecharge = rechargeStations.stream()
-          .min(Comparator.comparing(r -> robot.getCoord().distanceTo(r)))
-          .orElse(null);
-      
+      Coord nearestRecharge = coordinateService.findNearestCoord(robot.getCoord(), rechargeStations);
       if (nearestRecharge != null) {
         assignments.put(robot, nearestRecharge);
       }
@@ -100,10 +98,7 @@ public class AssignmentService {
     robots.stream()
         .filter(robot -> !assignments.containsKey(robot))
         .forEach(robot -> {
-          Coord nearestDirty = availableDirty.stream()
-              .min(Comparator.comparing(d -> robot.getCoord().distanceTo(d)))
-              .orElse(null);
-          
+          Coord nearestDirty = coordinateService.findNearestCoord(robot.getCoord(), availableDirty);
           if (nearestDirty != null) {
             assignments.put(robot, nearestDirty);
           }

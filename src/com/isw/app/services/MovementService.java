@@ -14,11 +14,15 @@ import com.isw.app.enums.SectorType;
 
 public class MovementService {
   private static final double DEFAULT_SCORE = 1000.0;
-  
+
   private final PathfindingService pathfindingService;
   private final AssignmentService assignmentService;
+  private final NavigationService navigationService;
+  private final CoordinateService coordinateService;
 
   public MovementService() {
+    this.coordinateService = new CoordinateService();
+    this.navigationService = new NavigationService(coordinateService);
     this.pathfindingService = new PathfindingService();
     this.assignmentService = new AssignmentService(pathfindingService);
   }
@@ -38,12 +42,11 @@ public class MovementService {
         .collect(Collectors.toList());
   }
 
-  private Decision calculateSingleRobotMovement(Robot robot, Room room, List<Coord> reservedCoords, 
-                                                Map<Robot, Coord> assignments) {
+  private Decision calculateSingleRobotMovement(Robot robot, Room room, List<Coord> reservedCoords,
+      Map<Robot, Coord> assignments) {
     Coord currentPos = robot.getCoord();
     SectorType currentType = room.getSectorAt(currentPos).getType();
-    
-    // Salir de recarga si acaba de recargar
+
     if (currentType == SectorType.RECHARGE && robot.isAtRechargePosition()) {
       return createExitDecision(robot, room, reservedCoords, assignments);
     }
@@ -53,72 +56,53 @@ public class MovementService {
       return new Decision(robot, null);
     }
 
-    // Si el objetivo es una recarga y está ocupada, ESPERAR en la posición actual
-    if (isRechargeOccupied(room, assignedTarget)) {
-      return new Decision(robot, null); // Esperar sin moverse
+    if (navigationService.isRechargeOccupied(room, assignedTarget)) {
+      return new Decision(robot, null);
     }
 
-    // Moverse hacia el objetivo
-    Coord nextMove = findPathToTarget(robot, assignedTarget, room, reservedCoords);
-    return createMovementDecision(robot, nextMove);
-  }
-
-  private boolean isRechargeOccupied(Room room, Coord target) {
-    return room.getSectorAt(target).getType() == SectorType.RECHARGE &&
-           !room.getSectorAt(target).isEmpty();
-  }
-
-  private Decision createExitDecision(Robot robot, Room room, List<Coord> reservedCoords, 
-                                      Map<Robot, Coord> assignments) {
-    robot.clearRechargePosition();
-    Coord exitMove = findExitFromRecharge(robot, room, reservedCoords, assignments);
-    return createMovementDecision(robot, exitMove);
-  }
-
-  private Decision createMovementDecision(Robot robot, Coord nextMove) {
+    Coord nextMove = findNextMove(robot, assignedTarget, room, reservedCoords);
     return new Decision(robot, nextMove != null ? new Movement(nextMove, DEFAULT_SCORE) : null);
   }
 
-  private Coord findExitFromRecharge(Robot robot, Room room, List<Coord> reservedCoords, 
-                                     Map<Robot, Coord> assignments) {
-    List<Coord> adjacentCoords = pathfindingService.getValidAdjacentCoords(robot.getCoord(), room);
-    Coord assignedTarget = assignments.get(robot);
-    
-    return adjacentCoords.stream()
-        .filter(coord -> !reservedCoords.contains(coord))
-        .filter(coord -> room.getSectorAt(coord).isEmpty())
+  private Decision createExitDecision(Robot robot, Room room, List<Coord> reservedCoords,
+      Map<Robot, Coord> assignments) {
+    robot.clearRechargePosition();
+    Coord exitMove = findExitMove(robot, room, reservedCoords, assignments.get(robot));
+    return new Decision(robot, exitMove != null ? new Movement(exitMove, DEFAULT_SCORE) : null);
+  }
+
+  private Coord findExitMove(Robot robot, Room room, List<Coord> reservedCoords, Coord target) {
+    return navigationService.getUnblockedAdjacentCoords(robot.getCoord(), room, reservedCoords).stream()
         .filter(coord -> room.getSectorAt(coord).getType() != SectorType.RECHARGE)
-        .min((c1, c2) -> compareByTarget(c1, c2, assignedTarget))
+        .min(Comparator.comparing(c -> target != null ? coordinateService.calculateDistance(c, target) : 0))
         .orElse(null);
   }
 
-  private int compareByTarget(Coord c1, Coord c2, Coord target) {
-    return target != null ? 
-           Integer.compare(c1.distanceTo(target), c2.distanceTo(target)) : 0;
-  }
+  private Coord findNextMove(Robot robot, Coord target, Room room, List<Coord> reservedCoords) {
+    boolean isGoingToDirty = room.getSectorAt(target).getType() == SectorType.DIRTY;
+    List<Coord> path = pathfindingService.findShortestPath(
+        robot.getCoord(), target, room, isGoingToDirty);
 
-  private Coord findPathToTarget(Robot robot, Coord target, Room room, List<Coord> reservedCoords) {
-    List<Coord> path = pathfindingService.findShortestPath(robot.getCoord(), target, room);
-    if (path == null || path.isEmpty()) return null;
+    if (path == null || path.isEmpty())
+      return null;
 
     Coord nextStep = path.get(0);
-    
-    if (isBlocked(nextStep, room, reservedCoords)) {
-      return findAlternativeMove(robot, room, reservedCoords, target);
+
+    if (navigationService.isBlocked(nextStep, room, reservedCoords)) {
+      return findAlternativeMove(robot, target, room, reservedCoords, isGoingToDirty);
     }
 
     return nextStep;
   }
 
-  private boolean isBlocked(Coord coord, Room room, List<Coord> reservedCoords) {
-    return reservedCoords.contains(coord) || !room.getSectorAt(coord).isEmpty();
-  }
-
-  private Coord findAlternativeMove(Robot robot, Room room, List<Coord> reservedCoords, Coord target) {
-    return pathfindingService.getValidAdjacentCoords(robot.getCoord(), room).stream()
-      .filter(coord -> !reservedCoords.contains(coord))
-      .filter(coord -> room.getSectorAt(coord).isEmpty())
-      .min(Comparator.comparing(c -> c.distanceTo(target)))
-      .orElse(null);
+  private Coord findAlternativeMove(Robot robot, Coord target, Room room,
+      List<Coord> reservedCoords, boolean allowRechargeTraversal) {
+    return navigationService.getUnblockedAdjacentCoords(robot.getCoord(), room, reservedCoords).stream()
+        .min(Comparator.comparingInt(coord -> {
+          List<Coord> pathFromCoord = pathfindingService.findShortestPath(
+              coord, target, room, allowRechargeTraversal);
+          return pathFromCoord != null ? pathFromCoord.size() + 1 : Integer.MAX_VALUE;
+        }))
+        .orElse(null);
   }
 }
