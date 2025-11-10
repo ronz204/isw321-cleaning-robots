@@ -8,3 +8,5 @@ Para iniciar la simulacion siga los siguientes pasos:
 4. Presionar el boton para Simular Limpieza
 
 De ser necesario que necesite acceso al repo, favor comuniquese conmigo.
+
+Nota: La documentacion la encontrara en el README.md
