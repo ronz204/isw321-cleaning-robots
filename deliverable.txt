@@ -1,0 +1,10 @@
+Github: https://github.com/ronz204/isw321-cleaning-robots
+
+Para iniciar la simulacion siga los siguientes pasos:
+
+1. Ejecutar el Main.java
+2. Presionar el boton para Generar Tablero
+3. Presionar el boton para Colocar Robots
+4. Presionar el boton para Simular Limpieza
+
+De ser necesario que necesite acceso al repo, favor comuniquese conmigo.
